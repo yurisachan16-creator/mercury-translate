@@ -39,14 +39,12 @@ async function zhipu(message: any) {
         let result = await resp.json();
         return result.choices[0].message.content;
     } else {
-        console.log(resp)
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(`翻译失败: ${resp.status} ${resp.statusText}`);
     }
 }
 
 function generateToken(APIKey: string) {
     if (!APIKey || !APIKey.includes('.')) {
-        console.log("API Key 格式错误：", APIKey)
         return;
     }
     let duration = 3600000 * 24; // 生成的 token 默认24小时后过期

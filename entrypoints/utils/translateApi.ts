@@ -12,9 +12,16 @@ import {
 import browser from 'webextension-polyfill';
 import { config, saveConfig } from './config';
 import { detectlang } from './common';
-import { resolveConfiguredModel, servicesType } from './option';
+import { resolveConfiguredModel, services, servicesType } from './option';
 import { getPageTranslationContext } from './pageContext';
 import { getMissingCredentialMessage } from './configValidation';
+import {
+  isNetworkConsentRequiredError,
+  isNetworkConsentRequiredOutcome,
+  getNetworkConsentScopeId,
+  NetworkConsentRequiredError,
+} from './providerConsent';
+import { requestNetworkProviderConsent } from './networkConsentUi';
 
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
@@ -22,6 +29,7 @@ const VIDEO_COUNT_SAVE_INTERVAL = 10_000;
 const TRANSLATION_COUNT_SAVE_INTERVAL = 500;
 let videoCountSaveTimer: ReturnType<typeof setTimeout> | undefined;
 let translationCountSaveTimer: ReturnType<typeof setTimeout> | undefined;
+let sessionNetworkProviderOverride: string | undefined;
 
 function createAbortError(): Error {
   const error = new Error('翻译已取消');
@@ -102,12 +110,68 @@ function waitForRequest<T>(
   });
 }
 
+interface RuntimeTranslationRequest {
+  context: string;
+  pageContext?: string;
+  origin: string | string[];
+  useCache: boolean;
+  serviceOverride?: string;
+  from?: string;
+  to?: string;
+  consentScopeId?: string;
+}
+
+async function sendTranslationMessage<T>(
+  request: RuntimeTranslationRequest,
+  timeout: number,
+  signal: AbortSignal | undefined,
+  lease: TranslationQueueLease,
+): Promise<T> {
+  throwIfAborted(signal);
+  const result = await waitForRequest(
+    browser.runtime.sendMessage({...request, consentScopeId: getNetworkConsentScopeId()}),
+    timeout,
+    signal,
+    lease,
+  );
+
+  if (isNetworkConsentRequiredOutcome(result)) {
+    throw new NetworkConsentRequiredError(result);
+  }
+
+  return result as T;
+}
+
+async function requestConsentProviderOverride(
+  error: NetworkConsentRequiredError,
+  signal?: AbortSignal,
+): Promise<string> {
+  const decision = await requestNetworkProviderConsent(error.outcome, signal);
+  throwIfAborted(signal);
+  if (!decision) throw error;
+  sessionNetworkProviderOverride = decision.providerId;
+  return decision.providerId;
+}
+
+function getSessionNetworkProviderOverride(configuredService: string): string | undefined {
+  if (!sessionNetworkProviderOverride) return undefined;
+  if (
+    configuredService === services.chromeTranslator
+    || configuredService === services.freeTranslation
+    || configuredService === services.microsoft
+    || configuredService === services.google
+  ) {
+    return sessionNetworkProviderOverride;
+  }
+  return undefined;
+}
+
 function scheduleTranslationCountSave(): void {
   config.count++;
   if (translationCountSaveTimer) return;
   translationCountSaveTimer = setTimeout(() => {
     translationCountSaveTimer = undefined;
-    void saveConfig().catch((error) => console.error('[FluentRead] 保存翻译计数失败:', error));
+    void saveConfig().catch((error) => console.error('[Mercury Translate] 保存翻译计数失败:', error));
   }, TRANSLATION_COUNT_SAVE_INTERVAL);
 }
 
@@ -115,7 +179,7 @@ function flushTranslationCountSave(): void {
   if (!translationCountSaveTimer) return;
   clearTimeout(translationCountSaveTimer);
   translationCountSaveTimer = undefined;
-  void saveConfig().catch((error) => console.error('[FluentRead] 保存翻译计数失败:', error));
+  void saveConfig().catch((error) => console.error('[Mercury Translate] 保存翻译计数失败:', error));
 }
 
 function scheduleVideoCountSave(): void {
@@ -124,7 +188,7 @@ function scheduleVideoCountSave(): void {
 
   videoCountSaveTimer = setTimeout(() => {
     videoCountSaveTimer = undefined;
-    void saveConfig().catch((error) => console.error('[FluentRead] 保存视频翻译计数失败:', error));
+    void saveConfig().catch((error) => console.error('[Mercury Translate] 保存视频翻译计数失败:', error));
   }, VIDEO_COUNT_SAVE_INTERVAL);
 }
 
@@ -144,6 +208,8 @@ export async function translateText(origin: string, context: string = document.t
     timeout = 45000,
     useCache = config.useCache,
     skipLanguageDetection = false,
+    sourceLanguage = config.from,
+    targetLanguage = config.to,
     signal,
     queueSession,
   } = options;
@@ -157,7 +223,7 @@ export async function translateText(origin: string, context: string = document.t
   assertTranslationCredentials();
 
   // 如果目标语言与当前文本语言相同，直接返回原文
-  if (!skipLanguageDetection && detectlang(origin.replace(/[\s\u3000]/g, '')) === config.to) {
+  if (!skipLanguageDetection && detectlang(origin.replace(/[\s\u3000]/g, '')) === targetLanguage) {
     return origin;
   }
 
@@ -171,16 +237,24 @@ export async function translateText(origin: string, context: string = document.t
   // 使用队列处理翻译请求
   return enqueueTranslation(async (lease) => {
     // 创建翻译任务
-    const translationTask = async (retryCount: number = 0): Promise<string> => {
+    const translationTask = async (
+      retryCount: number = 0,
+      serviceOverride?: string,
+      consentAttempted = false,
+    ): Promise<string> => {
       throwIfAborted(signal);
       try {
         // 发送翻译请求给background脚本处理
-        const result = await waitForRequest(
-          browser.runtime.sendMessage({ context, pageContext, origin, useCache }),
+        const result = await sendTranslationMessage<string>(
+          { context, pageContext, origin, useCache, serviceOverride, from: sourceLanguage, to: targetLanguage },
           timeout,
           signal,
           lease,
-        ) as string;
+        );
+
+        if (typeof result !== 'string') {
+          throw new Error('翻译服务返回格式异常');
+        }
 
         // 如果翻译结果为空或与原文完全相同，直接返回原文
         if (!result || result === origin) {
@@ -190,6 +264,11 @@ export async function translateText(origin: string, context: string = document.t
         return result;
       } catch (error) {
         if (isAbortError(error)) throw error;
+        if (isNetworkConsentRequiredError(error)) {
+          if (consentAttempted) throw error;
+          const consentedProvider = await requestConsentProviderOverride(error, signal);
+          return translationTask(retryCount, consentedProvider, true);
+        }
         // 处理错误，根据重试策略决定是否重试
         if (retryCount < maxRetries) {
           if (isDev) {
@@ -198,7 +277,7 @@ export async function translateText(origin: string, context: string = document.t
           
           // 等待一段时间后重试
           await waitForDelay(retryDelay, signal);
-          return translationTask(retryCount + 1);
+          return translationTask(retryCount + 1, serviceOverride, consentAttempted);
         }
         
         // 超过最大重试次数，抛出异常
@@ -207,7 +286,7 @@ export async function translateText(origin: string, context: string = document.t
     };
 
     // 开始执行翻译任务
-    return translationTask();
+    return translationTask(0, getSessionNetworkProviderOverride(config.service));
   }, queueSession);
 }
 
@@ -238,11 +317,15 @@ export async function translateTextBatch(
   scheduleTranslationCountSave();
 
   return enqueueTranslation(async (lease) => {
-    const translationTask = async (retryCount: number = 0): Promise<string[]> => {
+    const translationTask = async (
+      retryCount: number = 0,
+      serviceOverride?: string,
+      consentAttempted = false,
+    ): Promise<string[]> => {
       throwIfAborted(signal);
       try {
-        const result = await waitForRequest(
-          browser.runtime.sendMessage({ context, pageContext, origin: origins, useCache }),
+        const result = await sendTranslationMessage<string[]>(
+          { context, pageContext, origin: origins, useCache, serviceOverride },
           timeout,
           signal,
           lease,
@@ -255,15 +338,20 @@ export async function translateTextBatch(
         return result as string[];
       } catch (error) {
         if (isAbortError(error)) throw error;
+        if (isNetworkConsentRequiredError(error)) {
+          if (consentAttempted) throw error;
+          const consentedProvider = await requestConsentProviderOverride(error, signal);
+          return translationTask(retryCount, consentedProvider, true);
+        }
         if (retryCount < maxRetries) {
           await waitForDelay(retryDelay, signal);
-          return translationTask(retryCount + 1);
+          return translationTask(retryCount + 1, serviceOverride, consentAttempted);
         }
         throw error;
       }
     };
 
-    return translationTask();
+    return translationTask(0, getSessionNetworkProviderOverride(config.service));
   }, queueSession);
 }
 
@@ -279,12 +367,30 @@ export async function translateVideoText(origin: string): Promise<string> {
   // storage 写入和配置订阅回调把播放器主线程拖入高频循环。
   scheduleVideoCountSave();
   return enqueueTranslation(async (lease) => {
-    return waitForRequest(browser.runtime.sendMessage({
-        context: `YouTube 视频字幕：${document.title}`,
-        origin,
-        useCache: config.useCache,
-        serviceOverride: config.videoService,
-      }), 20_000, undefined, lease) as Promise<string>;
+    const translate = async (
+      serviceOverride = getSessionNetworkProviderOverride(config.videoService) || config.videoService,
+      consentAttempted = false,
+    ): Promise<string> => {
+      try {
+        const result = await sendTranslationMessage<string>({
+          context: `YouTube 视频字幕：${document.title}`,
+          origin,
+          useCache: config.useCache,
+          serviceOverride,
+        }, 20_000, undefined, lease);
+        if (typeof result !== 'string') throw new Error('视频字幕翻译返回格式异常');
+        return result;
+      } catch (error) {
+        if (isNetworkConsentRequiredError(error)) {
+          if (consentAttempted) throw error;
+          const consentedProvider = await requestConsentProviderOverride(error);
+          return translate(consentedProvider, true);
+        }
+        throw error;
+      }
+    };
+
+    return translate();
   });
 }
 
@@ -295,6 +401,7 @@ export function cancelAllTranslations() {
   if (isDev) {
     console.log('[翻译API] 取消所有等待中的翻译任务');
   }
+  sessionNetworkProviderOverride = undefined;
   clearTranslationQueue();
   flushTranslationCountSave();
 }
@@ -315,6 +422,10 @@ export interface TranslateOptions {
   pageContext?: string;
   /** Internal structured packets contain ASCII sentinels that must not affect source-language detection. */
   skipLanguageDetection?: boolean;
+  /** Optional source-language override for isolated tools such as input-box translation. */
+  sourceLanguage?: string;
+  /** Optional target-language override without mutating the page-wide default. */
+  targetLanguage?: string;
   /** Cancel retry delays and ignore a late runtime response after the DOM attempt is restored. */
   signal?: AbortSignal;
   /** Queue scope used to reject work that has not started when one DOM attempt is cancelled. */

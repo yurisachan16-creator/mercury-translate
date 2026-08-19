@@ -2,14 +2,14 @@ import { defineConfig } from 'vitepress'
 import viteImagemin from 'vite-plugin-imagemin'
 
 export default defineConfig({
-  title: 'FluentRead · 流畅阅读',
-  description: '让双语阅读自然发生的开源浏览器扩展。',
+  title: 'Mercury Translate · 水星翻译',
+  description: '本地优先的网页、字幕、图片与 PDF 双语阅读扩展。',
   lang: 'zh-CN',
   lastUpdated: true,
   base: '/',
 
   head: [
-    ['meta', { name: 'theme-color', content: '#e94872' }],
+    ['meta', { name: 'theme-color', content: '#f59e0b' }],
     ['link', { rel: 'icon', href: '/logo.png' }],
   ],
 
@@ -32,7 +32,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/logo.png',
-    siteTitle: 'FluentRead',
+    siteTitle: 'Mercury Translate',
     outline: 'deep',
     search: { provider: 'local' },
     nav: [
@@ -48,10 +48,12 @@ export default defineConfig({
         {
           text: '开始使用',
           items: [
-            { text: '认识 FluentRead', link: '/guide/' },
+            { text: '认识 Mercury Translate', link: '/guide/' },
             { text: '安装与第一次翻译', link: '/guide/getting-started' },
             { text: '功能总览', link: '/guide/features' },
+            { text: 'PDF 双语阅读', link: '/guide/pdf-translation' },
             { text: '图片翻译', link: '/guide/image-translation' },
+            { text: '关于项目', link: '/guide/about' },
           ],
         },
         {
@@ -64,7 +66,7 @@ export default defineConfig({
       ],
       '/config/': [
         {
-          text: '配置 FluentRead',
+          text: '配置 Mercury Translate',
           items: [
             { text: '设置总览', link: '/config/' },
             { text: '翻译服务', link: '/config/translation-engines' },
@@ -73,10 +75,9 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/Bistutu/FluentRead' }],
     footer: {
       message: 'Open source under the GPL-3.0 License.',
-      copyright: 'Copyright © 2025-present FluentRead contributors',
+      copyright: 'Copyright © 2026-present Mercury Translate contributors',
     },
   },
 })

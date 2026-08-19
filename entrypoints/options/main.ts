@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import './style.css'
 import 'element-plus/dist/index.css'
+import { bindMercuryI18nLocale, createMercuryI18n } from '@/entrypoints/i18n/vue'
 import {
   ElButton,
   ElCollapse,
@@ -25,7 +26,6 @@ import {
 import {
   InfoFilled,
   CircleCheckFilled,
-  Coffee,
   Download,
   Edit,
   Loading,
@@ -37,7 +37,12 @@ import {
   WarningFilled,
 } from '@element-plus/icons-vue'
 
-const app = createApp(App)
+async function bootstrap() {
+  const app = createApp(App)
+  const i18n = await createMercuryI18n()
+  const stopLocaleSync = bindMercuryI18nLocale(i18n)
+  app.use(i18n)
+  window.addEventListener('pagehide', stopLocaleSync, { once: true })
 
 const components = [
   ElButton,
@@ -60,18 +65,20 @@ const components = [
   ElTooltip,
 ]
 
-components.forEach((component) => component.name && app.component(component.name, component))
-app.component('InfoFilled', InfoFilled)
-app.component('CircleCheckFilled', CircleCheckFilled)
-app.component('Coffee', Coffee)
-app.component('Download', Download)
-app.component('Edit', Edit)
-app.component('Loading', Loading)
-app.component('Refresh', Refresh)
-app.component('Setting', Setting)
-app.component('Star', Star)
-app.component('Upload', Upload)
-app.component('Warning', Warning)
-app.component('WarningFilled', WarningFilled)
+  components.forEach((component) => component.name && app.component(component.name, component))
+  app.component('InfoFilled', InfoFilled)
+  app.component('CircleCheckFilled', CircleCheckFilled)
+  app.component('Download', Download)
+  app.component('Edit', Edit)
+  app.component('Loading', Loading)
+  app.component('Refresh', Refresh)
+  app.component('Setting', Setting)
+  app.component('Star', Star)
+  app.component('Upload', Upload)
+  app.component('Warning', Warning)
+  app.component('WarningFilled', WarningFilled)
 
-app.mount('#app')
+  app.mount('#app')
+}
+
+void bootstrap()

@@ -1,0 +1,14 @@
+{
+  "extensionName": {
+    "message": "Mercury Translate",
+    "description": "Extension name"
+  },
+  "extensionShortName": {
+    "message": "水星翻譯",
+    "description": "Short extension name"
+  },
+  "extensionDescription": {
+    "message": "開源雙語翻譯瀏覽器擴充功能，支援網頁、劃詞、字幕、圖片和 PDF 翻譯。",
+    "description": "Extension description"
+  }
+}

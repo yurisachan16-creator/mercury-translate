@@ -4,7 +4,6 @@ import {getDeepLXEndpoints} from "@/entrypoints/utils/deeplx";
 
 const DEEPLX_TOTAL_TIMEOUT_MS = 20_000;
 const DEEPLX_ATTEMPT_TIMEOUT_MS = 8_000;
-const DEEPLX_ERROR_BODY_PREVIEW_LENGTH = 200;
 
 function normalizeLanguage(language: string): string {
     const normalized = language.toLowerCase();
@@ -22,11 +21,6 @@ function normalizeLanguage(language: string): string {
 
 function getErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
-}
-
-function formatResponseBody(responseBody: string): string {
-    const compactBody = responseBody.replace(/\s+/g, " ").trim();
-    return compactBody.slice(0, DEEPLX_ERROR_BODY_PREVIEW_LENGTH);
 }
 
 async function fetchDeepLX(url: string, requestInit: RequestInit, timeoutMs: number): Promise<Response> {
@@ -72,8 +66,7 @@ async function translateFromDeepLX(
 
     const responseBody = await response.text();
     if (!response.ok) {
-        const preview = formatResponseBody(responseBody);
-        throw new Error(`HTTP ${response.status} ${response.statusText}${preview ? `，响应: ${preview}` : ""}`);
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
     }
 
     let result: unknown;

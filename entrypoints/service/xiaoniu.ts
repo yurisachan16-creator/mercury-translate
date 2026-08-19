@@ -20,8 +20,7 @@ async function xiaoniu(message: any) {
         let result = await resp.json();
         return result.tgt_text
     } else {
-        console.log(resp)
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(`翻译失败: ${resp.status} ${resp.statusText}`);
     }
 }
 

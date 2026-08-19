@@ -205,7 +205,7 @@ async function initializeConfigHistory(): Promise<void> {
     } catch (error) {
         historyInitialized = true;
         setHistoryState(createBaselineHistory(), false);
-        console.error('[FluentRead] 配置历史读取失败，使用当前配置快照', error);
+        console.error('[Mercury Translate] 配置历史读取失败，使用当前配置快照', error);
     }
 }
 
@@ -244,7 +244,7 @@ function flushHistorySnapshot(snapshot: Config): void {
     historyFlushPromise = appendHistorySnapshotNow(snapshot).finally(() => {
         historyFlushPromise = null;
     });
-    void historyFlushPromise.catch((error) => console.error('[FluentRead] 配置历史保存失败', error));
+    void historyFlushPromise.catch((error) => console.error('[Mercury Translate] 配置历史保存失败', error));
 }
 
 function scheduleHistorySnapshot(value: unknown): void {
@@ -354,7 +354,7 @@ async function initializeConfig(): Promise<void> {
         }
     } catch (error) {
         // 存储 API 暂时不可用时仍提供默认配置，避免 Firefox 设置页因初始化 rejection 反复重载。
-        console.error('[FluentRead] 配置读取失败，使用默认配置', error);
+        console.error('[Mercury Translate] 配置读取失败，使用默认配置', error);
         const fallback = new Config();
         const serialized = serializeConfig(fallback);
         initialized = true;
@@ -363,7 +363,7 @@ async function initializeConfig(): Promise<void> {
         try {
             await persistNormalizedConfig(fallback, serialized);
         } catch (saveError) {
-            console.error('[FluentRead] 默认配置保存失败', saveError);
+            console.error('[Mercury Translate] 默认配置保存失败', saveError);
         }
     }
 }
@@ -456,7 +456,7 @@ export async function requestConfigSave(value: unknown = config, sendMessage?: C
             // 后台负责串行落盘；这里只保留后台不可用时的降级路径。
             await saveConfig(normalized, {recordHistory: true, immediateHistory: true});
             if (error instanceof Error && !error.message.includes('Receiving end')) {
-                console.warn('[FluentRead] 后台保存配置失败，已回退到当前上下文', error);
+                console.warn('[Mercury Translate] 后台保存配置失败，已回退到当前上下文', error);
             }
         }
     } finally {
@@ -510,7 +510,7 @@ export async function requestConfigHistoryAction(
     } catch (error) {
         const history = await applyConfigHistoryAction(action, version);
         if (error instanceof Error && !error.message.includes('Receiving end')) {
-            console.warn('[FluentRead] 后台配置历史操作失败，已回退到当前上下文', error);
+            console.warn('[Mercury Translate] 后台配置历史操作失败，已回退到当前上下文', error);
         }
         return history;
     }

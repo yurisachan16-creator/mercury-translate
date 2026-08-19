@@ -168,7 +168,7 @@ function captureReadablePage(): CapturedReadablePage {
     try {
         documentSnapshot = createDefuddleSnapshotDocument();
     } catch (error) {
-        console.warn('[FluentRead] failed to capture detached document snapshot:', error);
+        console.warn('[Mercury Translate] failed to capture detached document snapshot:', error);
     }
 
     let bodySnapshot: HTMLElement | null = null;
@@ -177,7 +177,7 @@ function captureReadablePage(): CapturedReadablePage {
             bodySnapshot = document.body?.cloneNode(true) as HTMLElement | null;
             if (bodySnapshot) removeFluentReadNodes(bodySnapshot);
         } catch (error) {
-            console.warn('[FluentRead] failed to capture detached body snapshot:', error);
+            console.warn('[Mercury Translate] failed to capture detached body snapshot:', error);
         }
     }
     return {url, documentSnapshot, bodySnapshot, boundedText: null};
@@ -215,7 +215,7 @@ async function extractReadablePageText(source: CapturedReadablePage): Promise<st
     } catch (error) {
         // Content extraction is an enhancement. A parser/runtime failure must
         // never prevent the normal translation request from being sent.
-        console.warn('[FluentRead] readable page extraction failed; using body text:', error);
+        console.warn('[Mercury Translate] readable page extraction failed; using body text:', error);
     }
 
     const fallback = source.documentSnapshot?.body || source.bodySnapshot;

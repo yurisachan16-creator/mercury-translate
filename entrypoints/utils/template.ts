@@ -216,7 +216,7 @@ export function cozeTemplate(origin: string, context?: string, prompt?: string, 
 
     const payload: any = {
         bot_id: config.robot_id[service],
-        user: "FluentRead",
+        user: "MercuryTranslate",
         query: system + user,
         stream: false
     };

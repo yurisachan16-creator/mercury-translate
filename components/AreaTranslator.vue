@@ -1,28 +1,28 @@
 <template>
   <div v-show="isSelecting || phase !== 'idle'" class="fr-area-translator-root" @pointerdown.stop>
     <div v-if="isSelecting && selectionRect" class="fr-area-selection" :style="areaStyle(selectionRect)" aria-hidden="true">
-      <span>松开鼠标翻译</span>
+      <span>{{ t('content.releaseToTranslate') }}</span>
     </div>
 
     <div v-else-if="phase === 'loading' && activeRect && !capturePending" class="fr-area-loading" :style="areaStyle(activeRect)" role="status" aria-live="polite">
       <span class="fr-area-spinner" aria-hidden="true" />
-      <span>正在识别并翻译…</span>
+      <span>{{ t('content.recognizingAndTranslating') }}</span>
     </div>
 
-    <section v-else-if="phase === 'translated' && activeRect" class="fr-area-result" :class="{ 'fr-dark-theme': isDarkTheme }" :style="areaStyle(activeRect)" role="dialog" aria-label="圈选翻译结果">
-      <img :src="translatedImage" alt="圈选翻译结果" draggable="false" />
+    <section v-else-if="phase === 'translated' && activeRect" class="fr-area-result" :class="{ 'fr-dark-theme': isDarkTheme }" :style="areaStyle(activeRect)" role="dialog" :aria-label="t('content.areaResult')">
+      <img :src="translatedImage" :alt="t('content.areaResult')" draggable="false" />
       <div class="fr-area-toolbar">
-        <span>圈选翻译</span>
-        <button type="button" aria-label="关闭圈选翻译结果" title="关闭" @click="clearResult">×</button>
+        <span>{{ t('content.areaTranslation') }}</span>
+        <button type="button" :aria-label="t('content.closeAreaResult')" :title="t('content.close')" @click="clearResult">×</button>
       </div>
     </section>
 
     <section v-else-if="phase === 'error' && activeRect" class="fr-area-error" :class="{ 'fr-dark-theme': isDarkTheme }" :style="errorStyle(activeRect)" role="alert">
-      <strong>圈选翻译失败</strong>
+      <strong>{{ t('content.areaFailed') }}</strong>
       <span>{{ errorMessage }}</span>
       <div>
-        <button type="button" @click="retryTranslation">重试</button>
-        <button type="button" @click="clearResult">关闭</button>
+        <button type="button" @click="retryTranslation">{{ t('content.retry') }}</button>
+        <button type="button" @click="clearResult">{{ t('content.close') }}</button>
       </div>
     </section>
   </div>
@@ -30,11 +30,14 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { config } from '@/entrypoints/utils/config';
 import { captureVisibleAreaInExtension, translateCapturedAreaInExtension } from '@/entrypoints/utils/areaTranslationClient';
 import { isAreaHotkey, isAreaZKey, isUsableAreaRect, normalizeAreaRect, type AreaPoint, type AreaRect } from '@/entrypoints/utils/areaTranslationCore';
 
 type AreaPhase = 'idle' | 'selecting' | 'loading' | 'translated' | 'error';
+
+const { t } = useI18n({ useScope: 'global' });
 
 const phase = ref<AreaPhase>('idle');
 const selectionRect = ref<AreaRect | null>(null);
@@ -48,6 +51,7 @@ let areaHotkeyPressed = false;
 let pointerDown = false;
 let startPoint: AreaPoint | null = null;
 let translationRequestId = 0;
+let activeAbortController: AbortController | null = null;
 let systemThemeMedia: MediaQueryList | null = null;
 
 function areaStyle(rect: AreaRect): Record<string, string> {
@@ -95,6 +99,8 @@ function isEnabled(): boolean {
 
 function clearResult(): void {
   translationRequestId += 1;
+  activeAbortController?.abort();
+  activeAbortController = null;
   capturePending.value = false;
   phase.value = 'idle';
   selectionRect.value = null;
@@ -186,6 +192,9 @@ function finishSelection(): void {
 
 async function requestTranslation(rect: AreaRect): Promise<void> {
   const requestId = ++translationRequestId;
+  activeAbortController?.abort();
+  const controller = new AbortController();
+  activeAbortController = controller;
   errorMessage.value = '';
   try {
     const selection = {
@@ -196,17 +205,19 @@ async function requestTranslation(rect: AreaRect): Promise<void> {
     // 先让框选层完全消失，再截图；否则选区边框会被 OCR 当作页面内容。
     await nextTick();
     const screenshot = await captureVisibleAreaInExtension();
-    if (requestId !== translationRequestId || activeRect.value !== rect) return;
+    if (requestId !== translationRequestId || activeRect.value !== rect || controller.signal.aborted) return;
     capturePending.value = false;
-    const result = await translateCapturedAreaInExtension(screenshot, selection, config.from, document.title);
-    if (requestId !== translationRequestId || activeRect.value !== rect) return;
+    const result = await translateCapturedAreaInExtension(screenshot, selection, config.from, document.title, controller.signal);
+    if (requestId !== translationRequestId || activeRect.value !== rect || controller.signal.aborted) return;
     translatedImage.value = result.image;
     phase.value = 'translated';
   } catch (error) {
-    if (requestId !== translationRequestId || activeRect.value !== rect) return;
+    if (requestId !== translationRequestId || activeRect.value !== rect || controller.signal.aborted) return;
     capturePending.value = false;
     errorMessage.value = error instanceof Error ? error.message : String(error);
     phase.value = 'error';
+  } finally {
+    if (activeAbortController === controller) activeAbortController = null;
   }
 }
 

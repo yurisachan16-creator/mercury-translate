@@ -1,6 +1,10 @@
 import { createWorker, PSM, type Worker } from 'tesseract.js';
 import { getOcrLanguages, normalizeOcrLines, type OcrLine } from '@/entrypoints/utils/imageTranslationCore';
 import type { ImageOcrLanguageCode } from '@/entrypoints/utils/imageOcrLanguages';
+import {
+    clearVerifiedOcrLanguageAssets,
+    loadVerifiedOcrLanguageAssets,
+} from '@/entrypoints/utils/ocrLanguageAssets';
 
 let workerPromise: Promise<Worker> | null = null;
 let workerLanguages = '';
@@ -20,15 +24,22 @@ async function getOcrWorkerForLanguages(languageCodes: string): Promise<Worker> 
     }
 
     workerLanguages = languages;
-    workerPromise = createWorker(languages, 1, {
+    workerPromise = (async () => {
+        const verifiedLanguages = await loadVerifiedOcrLanguageAssets(
+            languages.split('+') as ImageOcrLanguageCode[],
+        );
+        return createWorker(verifiedLanguages, 1, {
         workerPath: extensionAsset('worker/worker.min.js'),
         corePath: extensionAsset('core'),
-        cachePath: 'fluent-read-image-ocr',
-        // 不再把 traineddata 打进扩展；Tesseract.js 会从 jsDelivr 按需下载，
-        // 并将解压后的语言包缓存到 Offscreen Document 的 IndexedDB。
-        // Offscreen 页面拥有扩展源，直接加载本地 worker 可避免 Blob Worker 的 CSP/源限制。
+        cachePath: 'mercury-image-ocr',
+        cacheMethod: 'none',
+        gzip: false,
+        // Worker and WASM code are packaged with the extension. Language data
+        // is fetched by Mercury, verified, and supplied as bytes so Tesseract
+        // never silently contacts its default CDN.
         workerBlobURL: false,
-    }).catch(error => {
+        });
+    })().catch(error => {
         workerPromise = null;
         workerLanguages = '';
         throw error;
@@ -56,4 +67,13 @@ export async function recognizeImage(image: string, sourceLanguage: string): Pro
 export async function downloadImageOcrLanguages(languages: ImageOcrLanguageCode[]): Promise<void> {
     if (languages.length === 0) return;
     await getOcrWorkerForLanguages(languages.join('+'));
+}
+
+export async function clearImageOcrLanguages(): Promise<void> {
+    const activeWorker = workerPromise;
+    workerPromise = null;
+    workerLanguages = '';
+    const worker = await activeWorker?.catch(() => null);
+    await worker?.terminate().catch(() => undefined);
+    await clearVerifiedOcrLanguageAssets();
 }

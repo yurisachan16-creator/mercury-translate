@@ -1,7 +1,7 @@
 import {_service} from './_service';
 import {formatServiceError} from '@/entrypoints/utils/serviceError';
 
-export const CONNECTION_TEST_ORIGIN = 'Hello from FluentRead.';
+export const CONNECTION_TEST_ORIGIN = 'Hello from Mercury Translate.';
 
 function isNonEmptyText(value: unknown): value is string {
     return typeof value === 'string' && value.trim().length > 0;

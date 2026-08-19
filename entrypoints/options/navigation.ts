@@ -1,3 +1,5 @@
+import type { MessagePath } from '@/entrypoints/i18n/runtime'
+
 export type NavigationItem = {
   id: string
   icon: string
@@ -17,75 +19,83 @@ export type NavigationGroup = {
   items: NavigationItem[]
 }
 
-export const navigationGroups: NavigationGroup[] = [
-  {
-    label: '基础设置',
-    items: [
-      {
-        id: 'settings-general', icon: '⌂', label: '通用设置', description: '状态与显示', group: '基础设置',
-        heading: '调整你的阅读体验', summary: '管理插件状态、翻译模式和译文的基础显示方式。',
-        kicker: '阅读偏好', title: '通用设置', detail: '常用开关集中在这里，修改后会自动保存。',
-        searchDescription: '插件启停、双语模式、译文样式与主题',
-      },
-      {
-        id: 'settings-services', icon: '译', label: '翻译服务', description: '服务与模型', group: '基础设置',
-        heading: '配置翻译服务与模型', summary: '按机器翻译和 AI 翻译分类，配置之后网页翻译默认使用的服务、模型及连接参数。',
-        kicker: '翻译能力', title: '翻译服务与模型', detail: '配置网页翻译默认使用的服务、模型和连接参数。',
-        searchDescription: '微软翻译、OpenAI、DeepSeek、Gemini、模型与令牌',
-      },
-    ],
-  },
-  {
-    label: '阅读工具',
-    items: [
-      {
-        id: 'settings-shortcuts', icon: '⌘', label: '交互与快捷键', description: '悬停、划词、全文', group: '阅读工具',
-        heading: '让翻译顺手发生', summary: '统一设置鼠标悬停、划词和全文翻译的触发习惯。',
-        kicker: '操作方式', title: '交互与快捷键', detail: '为高频动作选择容易记忆且不冲突的触发方式。',
-        searchDescription: '鼠标悬停、划词翻译、全文翻译、右键全文翻译与自定义按键',
-      },
-      {
-        id: 'settings-image-translation', icon: '图', label: '图片翻译', description: 'OCR 与语言包', group: '阅读工具',
-        heading: '管理图片翻译语言', summary: '图片翻译使用本地 OCR。首次识别前，请下载对应的语言包。',
-        kicker: 'Beta 测试', title: '图片翻译', detail: '按需下载 OCR 语言包；推荐先下载简体中文和 English。',
-        searchDescription: '图片翻译、OCR、语言包、中文、英文、日文、下载',
-      },
-      {
-        id: 'settings-video', icon: 'CC', label: '视频字幕 Beta 测试', description: 'YouTube 边看边译', group: '阅读工具',
-        heading: '边看边译视频字幕', summary: '在 YouTube 原生字幕下方显示译文，并独立选择视频翻译服务。',
-        kicker: 'FluentRead 视频翻译 Beta 测试', title: 'FluentRead YouTube 视频字幕', detail: '只处理播放器已经提供的字幕文本，不上传音频或视频内容。',
-        searchDescription: 'YouTube、视频字幕、视频翻译服务、DeepLX、微软翻译',
-      },
-    ],
-  },
-  {
-    label: '系统与数据',
-    items: [
-      {
-        id: 'settings-advanced', icon: '◇', label: '高级选项', description: '性能与模板', group: '系统与数据',
-        heading: '精细控制运行方式', summary: '管理缓存、动画、并发、悬浮工具、代理和 AI 提示词。',
-        kicker: '运行策略', title: '高级选项', detail: '这些设置更偏向性能、兼容性和高级翻译行为。',
-        searchDescription: '缓存、动画、并发、悬浮球、输入框、代理与提示词',
-      },
-      {
-        id: 'settings-data', icon: '⇅', label: '配置管理', description: '导入与导出', group: '系统与数据',
-        heading: '备份与迁移配置', summary: '导出当前设置，或从已有配置恢复你的使用习惯。',
-        kicker: '数据工具', title: '配置管理', detail: '通过 JSON 完成配置备份、迁移与恢复。',
-        searchDescription: '备份、迁移、导出与导入 JSON 配置',
-      },
-    ],
-  },
-  {
-    label: '关于',
-    items: [
-      {
-        id: 'settings-about', icon: 'i', label: '关于流畅阅读', description: '版本与项目', group: '关于',
-        heading: '关于流畅阅读', summary: '了解插件版本、核心体验与项目入口。',
-        kicker: '关于项目', title: '关于流畅阅读', detail: '一个让双语阅读更自然的开源浏览器翻译插件。',
-        searchDescription: '版本、开源项目、使用文档与问题反馈',
-      },
-    ],
-  },
-]
+type Translate = (key: MessagePath, values?: Record<string, unknown>) => string
 
-export const navigationItems = navigationGroups.flatMap((group) => group.items)
+const nav = (t: Translate, key: MessagePath) => t(key)
+
+export function createNavigationGroups(t: Translate): NavigationGroup[] {
+  return [
+  {
+    label: nav(t, 'nav.basicSettings'),
+    items: [
+      {
+        id: 'settings-general', icon: '⌂', label: nav(t, 'nav.generalLabel'), description: nav(t, 'nav.generalDescription'), group: nav(t, 'nav.basicSettings'),
+        heading: nav(t, 'nav.generalHeading'), summary: nav(t, 'nav.generalSummary'),
+        kicker: nav(t, 'nav.generalKicker'), title: nav(t, 'nav.generalTitle'), detail: nav(t, 'nav.generalDetail'),
+        searchDescription: nav(t, 'nav.generalSearch'),
+      },
+      {
+        id: 'settings-services', icon: '译', label: nav(t, 'nav.servicesLabel'), description: nav(t, 'nav.servicesDescription'), group: nav(t, 'nav.basicSettings'),
+        heading: nav(t, 'nav.servicesHeading'), summary: nav(t, 'nav.servicesSummary'),
+        kicker: nav(t, 'nav.servicesKicker'), title: nav(t, 'nav.servicesTitle'), detail: nav(t, 'nav.servicesDetail'),
+        searchDescription: nav(t, 'nav.servicesSearch'),
+      },
+    ],
+  },
+  {
+    label: nav(t, 'nav.readingTools'),
+    items: [
+      {
+        id: 'settings-shortcuts', icon: '⌘', label: nav(t, 'nav.shortcutsLabel'), description: nav(t, 'nav.shortcutsDescription'), group: nav(t, 'nav.readingTools'),
+        heading: nav(t, 'nav.shortcutsHeading'), summary: nav(t, 'nav.shortcutsSummary'),
+        kicker: nav(t, 'nav.shortcutsKicker'), title: nav(t, 'nav.shortcutsTitle'), detail: nav(t, 'nav.shortcutsDetail'),
+        searchDescription: nav(t, 'nav.shortcutsSearch'),
+      },
+      {
+        id: 'settings-image-translation', icon: '图', label: nav(t, 'nav.imageLabel'), description: nav(t, 'nav.imageDescription'), group: nav(t, 'nav.readingTools'),
+        heading: nav(t, 'nav.imageHeading'), summary: nav(t, 'nav.imageSummary'),
+        kicker: nav(t, 'nav.imageKicker'), title: nav(t, 'nav.imageTitle'), detail: nav(t, 'nav.imageDetail'),
+        searchDescription: nav(t, 'nav.imageSearch'),
+      },
+      {
+        id: 'settings-video', icon: 'CC', label: nav(t, 'nav.videoLabel'), description: nav(t, 'nav.videoDescription'), group: nav(t, 'nav.readingTools'),
+        heading: nav(t, 'nav.videoHeading'), summary: nav(t, 'nav.videoSummary'),
+        kicker: nav(t, 'nav.videoKicker'), title: nav(t, 'nav.videoTitle'), detail: nav(t, 'nav.videoDetail'),
+        searchDescription: nav(t, 'nav.videoSearch'),
+      },
+    ],
+  },
+  {
+    label: nav(t, 'nav.systemData'),
+    items: [
+      {
+        id: 'settings-advanced', icon: '◇', label: nav(t, 'nav.advancedLabel'), description: nav(t, 'nav.advancedDescription'), group: nav(t, 'nav.systemData'),
+        heading: nav(t, 'nav.advancedHeading'), summary: nav(t, 'nav.advancedSummary'),
+        kicker: nav(t, 'nav.advancedKicker'), title: nav(t, 'nav.advancedTitle'), detail: nav(t, 'nav.advancedDetail'),
+        searchDescription: nav(t, 'nav.advancedSearch'),
+      },
+      {
+        id: 'settings-data', icon: '⇅', label: nav(t, 'nav.dataLabel'), description: nav(t, 'nav.dataDescription'), group: nav(t, 'nav.systemData'),
+        heading: nav(t, 'nav.dataHeading'), summary: nav(t, 'nav.dataSummary'),
+        kicker: nav(t, 'nav.dataKicker'), title: nav(t, 'nav.dataTitle'), detail: nav(t, 'nav.dataDetail'),
+        searchDescription: nav(t, 'nav.dataSearch'),
+      },
+    ],
+  },
+  {
+    label: nav(t, 'nav.aboutGroup'),
+    items: [
+      {
+        id: 'settings-about', icon: 'i', label: nav(t, 'nav.aboutLabel'), description: nav(t, 'nav.aboutDescription'), group: nav(t, 'nav.aboutGroup'),
+        heading: nav(t, 'nav.aboutHeading'), summary: nav(t, 'nav.aboutSummary'),
+        kicker: nav(t, 'nav.aboutKicker'), title: nav(t, 'nav.aboutTitle'), detail: nav(t, 'nav.aboutDetail'),
+        searchDescription: nav(t, 'nav.aboutSearch'),
+      },
+    ],
+  },
+  ]
+}
+
+export function createNavigationItems(t: Translate) {
+  return createNavigationGroups(t).flatMap((group) => group.items)
+}

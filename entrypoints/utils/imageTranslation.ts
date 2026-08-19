@@ -366,7 +366,7 @@ async function translateImage(state: ImageTranslationState): Promise<void> {
         await withTimeout(waitForImageReady(state.image), IMAGE_READ_TIMEOUT_MS, '图片加载超时');
         const imageData = await withTimeout(getImageData(state.image), IMAGE_READ_TIMEOUT_MS, '图片读取超时');
         const result = await withTimeout(
-            translateImageInExtension(imageData, config.from, document.title),
+            translateImageInExtension(imageData, config.from, document.title, controller.signal),
             IMAGE_OCR_TIMEOUT_MS + IMAGE_TRANSLATION_TIMEOUT_MS,
             '图片翻译超时',
         );
@@ -383,7 +383,7 @@ async function translateImage(state: ImageTranslationState): Promise<void> {
         window.setTimeout(() => {
             if (state.phase === 'error') setButtonState(state, 'idle', '翻译图片');
         }, 3000);
-        console.warn('[FluentRead] 图片翻译失败:', error);
+        console.warn('[Mercury Translate] 图片翻译失败:', error);
     } finally {
         if (state.abortController === controller) state.abortController = null;
     }

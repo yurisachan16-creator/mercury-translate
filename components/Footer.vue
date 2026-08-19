@@ -1,11 +1,8 @@
 <template>
   <div class="footer-container footer-size">
-    <p class="translation-count">你已经翻译
-      <el-text class="count-number" type="primary">{{ computedCount }}</el-text>
-      次
-    </p>
+    <p class="translation-count">{{ t('footer.translationCount', { count: computedCount }) }}</p>
     <div class="footer-links">
-      <el-link class="action-link left" :class="{ 'failed': buttonText === '清除失败', 'success': buttonText === '清除成功' }" @click="clearCache"
+      <el-link class="action-link left" :class="{ 'failed': cacheStatus === 'failed', 'success': cacheStatus === 'succeeded' }" @click="clearCache"
         :disabled="buttonDisabled">
         <el-icon v-if="showLoading">
           <Loading class="el-icon-loading" />
@@ -13,32 +10,12 @@
         {{ buttonText }}
       </el-link>
       <div class="right-links">
-        <el-link class="action-link" href="https://fluent.thinkstu.com/" target="_blank">
+        <el-link class="action-link" href="https://github.com/Bistutu/FluentRead" target="_blank">
           <el-icon class="github-icon">
             <Star />
           </el-icon>
-          GitHub开源
+          {{ t('footer.upstream') }}
         </el-link>
-      </div>
-    </div>
-    
-    <!-- 赞赏码弹窗 -->
-    <div
-      title="赞赏作者"
-      width="300px"
-      align-center
-      :show-close="true"
-      :close-on-click-modal="true"
-      :close-on-press-escape="true"
-      class="donate-dialog"
-    >
-      <div class="donate-content">
-        <p class="donate-text">如果你觉得这个插件对您有帮助，<br>可以通过微信👇🏻赞赏作者一杯咖啡
-          <el-icon class="donate-icon"><Coffee /></el-icon> </p>
-        <div class="qrcode-container">
-          <img src="/misc/approve.jpg" alt="赞赏码" class="qrcode-image" />
-        </div>
-        <p class="donate-thanks">感谢你的支持！❤️</p>
       </div>
     </div>
   </div>
@@ -46,20 +23,28 @@
 
 <script lang="ts" setup>
 import { computed, onUnmounted, reactive, ref } from 'vue';
-import { Star, Loading, Coffee } from "@element-plus/icons-vue";
+import { useI18n } from 'vue-i18n';
+import { Star, Loading } from "@element-plus/icons-vue";
 import { Config } from "../entrypoints/utils/model";
 import browser from 'webextension-polyfill';
 import { config, configReady, subscribeConfig } from '@/entrypoints/utils/config';
 
 // 实际上是 el-link 而不是 el-button
 const buttonDisabled = ref(false);
-const buttonText = ref('清除翻译缓存');
+const cacheStatus = ref<'idle' | 'clearing' | 'succeeded' | 'failed'>('idle');
+const { t } = useI18n({ useScope: 'global' });
+const buttonText = computed(() => ({
+  idle: t('footer.clearCache'),
+  clearing: t('footer.clearing'),
+  succeeded: t('footer.clearSucceeded'),
+  failed: t('footer.clearFailed'),
+}[cacheStatus.value]));
 
 const showLoading = ref(false);
 async function clearCache() {
   try {
     buttonDisabled.value = true;
-    buttonText.value = "正在清除...";
+    cacheStatus.value = 'clearing';
     showLoading.value = true;
 
     // 获取当前标签页
@@ -72,23 +57,23 @@ async function clearCache() {
     await browser.tabs.sendMessage(tabs[0].id, { message: 'clearCache' });
 
     // 显示成功状态
-    buttonText.value = "清除成功";
+    cacheStatus.value = 'succeeded';
 
     // 恢复按钮状态
     setTimeout(() => {
       buttonDisabled.value = false;
-      buttonText.value = '清除翻译缓存';
+      cacheStatus.value = 'idle';
       showLoading.value = false;
     }, 1500);
 
   } catch (error) {
     console.error('清除缓存失败:', error);
-    buttonText.value = "清除失败";
+    cacheStatus.value = 'failed';
 
     // 恢复按钮状态
     setTimeout(() => {
       buttonDisabled.value = false;
-      buttonText.value = '清除翻译缓存';
+      cacheStatus.value = 'idle';
       showLoading.value = false;
     }, 1500);
   }
@@ -158,13 +143,9 @@ const computedCount = computed(() => localConfig.count);
   transform: scale(0.98);
 }
 
-.github-icon, .donate-icon {
+.github-icon {
   font-size: 1.2em;
   margin-right: 2px;
-}
-
-.donate-icon {
-  color: var(--el-color-warning);
 }
 
 :deep(.el-icon-loading) {
@@ -194,69 +175,10 @@ const computedCount = computed(() => localConfig.count);
   color: var(--el-color-success) !important;
 }
 
-/* 赞赏码弹窗样式 */
-.donate-dialog :deep(.el-dialog__header) {
-  padding-bottom: 10px;
-  margin-right: 0;
-  text-align: center;
-  border-bottom: 1px solid var(--fr-border-color-lighter);
-}
-
-.donate-dialog :deep(.el-dialog__headerbtn) {
-  top: 15px;
-}
-
-.donate-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: -5px;
-}
-
-.donate-text {
-  text-align: center;
-  margin-bottom: 15px;
-  color: var(--fr-text-color-primary);
-  line-height: 1.5;
-}
-
-.qrcode-container {
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 15px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--fr-border-color-light);
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.qrcode-container:hover {
-  transform: scale(1.02);
-}
-
-.qrcode-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background-color: #fff;
-}
-
-.donate-thanks {
-  text-align: center;
-  margin: 10px 0 15px;
-  color: var(--el-color-success);
-  font-weight: bold;
-}
-
 /* 暗色主题适配 */
 @media (prefers-color-scheme: dark) {
   .footer-container {
     background: var(--fr-bg-color-darker);
-  }
-  
-  .qrcode-image {
-    border: 1px solid var(--fr-border-color);
   }
 }
 </style>

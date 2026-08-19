@@ -1,4 +1,14 @@
+import browser from 'webextension-polyfill';
 import type { OcrLine } from '@/entrypoints/utils/imageTranslationCore';
+import {requestUrlHostPermission} from '@/entrypoints/utils/providerPermissions';
+import {localizeStructuredErrorResponseFromPreference} from '@/entrypoints/i18n/errors';
+import {
+    getNetworkConsentScopeId,
+    isNetworkConsentRequiredOutcome,
+    NetworkConsentRequiredError,
+    type NetworkConsentRequiredOutcome,
+} from '@/entrypoints/utils/providerConsent';
+import {requestNetworkProviderConsent} from '@/entrypoints/utils/networkConsentUi';
 
 interface ImageTranslationLine extends OcrLine {
     backgroundColor: string;
@@ -10,6 +20,8 @@ interface ImageTranslationResponse {
     lines?: ImageTranslationLine[];
     error?: string;
 }
+
+type ImageTranslationRuntimeResponse = ImageTranslationResponse | NetworkConsentRequiredOutcome | undefined;
 
 interface ImageOcrResponse {
     success: boolean;
@@ -31,7 +43,7 @@ export async function recognizeImageInExtension(image: string, sourceLanguage: s
     }) as ImageOcrResponse | undefined;
 
     if (!response?.success) {
-        throw new Error(response?.error || '图片 OCR 服务不可用');
+        throw await localizeStructuredErrorResponseFromPreference(response, 'error.imageOcrUnavailable');
     }
 
     return response.lines || [];
@@ -41,29 +53,43 @@ export async function translateImageInExtension(
     image: string,
     sourceLanguage: string,
     title: string,
+    signal?: AbortSignal,
 ): Promise<{ image: string; lines: ImageTranslationLine[] }> {
-    const response = await browser.runtime.sendMessage({
+    const send = (serviceOverride?: string) => browser.runtime.sendMessage({
         type: 'fluentReadImageTranslate',
         image,
         sourceLanguage,
         title,
-    }) as ImageTranslationResponse | undefined;
+        serviceOverride,
+        consentScopeId: getNetworkConsentScopeId(),
+    }) as Promise<ImageTranslationRuntimeResponse>;
+
+    let response = await send();
+    if (isNetworkConsentRequiredOutcome(response)) {
+        const decision = await requestNetworkProviderConsent(response, signal);
+        if (!decision) throw new NetworkConsentRequiredError(response);
+        response = await send(decision.providerId);
+        if (isNetworkConsentRequiredOutcome(response)) throw new NetworkConsentRequiredError(response);
+    }
 
     if (!response?.success || !response.image || !Array.isArray(response.lines)) {
-        throw new Error(response?.error || '图片翻译服务不可用');
+        throw await localizeStructuredErrorResponseFromPreference(response, 'error.imageTranslationUnavailable');
     }
 
     return { image: response.image, lines: response.lines };
 }
 
 export async function fetchImageInExtension(imageUrl: string): Promise<string> {
+    if (!await requestUrlHostPermission(imageUrl)) {
+        throw await localizeStructuredErrorResponseFromPreference(undefined, 'error.imageFetchPermissionDenied');
+    }
     const response = await browser.runtime.sendMessage({
         type: 'fluentReadImageFetch',
         url: imageUrl,
     }) as ImageFetchResponse | undefined;
 
     if (!response?.success || !response.image) {
-        throw new Error(response?.error || '无法读取远程图片');
+        throw await localizeStructuredErrorResponseFromPreference(response, 'error.imageFetchFailed');
     }
 
     return response.image;

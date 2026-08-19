@@ -24,7 +24,7 @@ function createNoticeContent(message: string, type: 'error' | 'success', credent
     const detail = getNoticeDetail(message, credential);
     return h('span', {class: 'fluent-read-notice-copy'}, [
         h('span', {class: 'fluent-read-notice-heading'}, [
-            h('strong', {class: 'fluent-read-notice-brand'}, '流畅阅读'),
+            h('strong', {class: 'fluent-read-notice-brand'}, '水星翻译'),
             h('span', {class: 'fluent-read-notice-divider', 'aria-hidden': 'true'}, '·'),
             h('span', {class: 'fluent-read-notice-title'}, getNoticeTitle(type, credential)),
         ]),
@@ -53,7 +53,7 @@ function sendMessage(message: string, type: 'error' | 'success'): void {
         icon: () => h('img', {
             class: 'fluent-read-notice-mark',
             src: browser.runtime.getURL('/icon/48.png'),
-            alt: '流畅阅读',
+            alt: '水星翻译',
         }),
         customClass: `fluent-read-message${credential ? ' fluent-read-message-credential' : ''}`,
         showClose: true,

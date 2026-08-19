@@ -1,9 +1,12 @@
 <template>
-  <h1 class="title">流畅阅读 <span class="version">V{{version}}</span></h1>
+  <h1 class="title">{{ t('brand.productName') }} <span class="version">V{{version}}</span></h1>
 </template>
 
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n'
+
 const version = process.env.VUE_APP_VERSION
+const { t } = useI18n({ useScope: 'global' })
 </script>
 
 <style scoped>

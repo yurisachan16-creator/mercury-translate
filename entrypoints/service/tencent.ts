@@ -140,8 +140,7 @@ async function tencent(message: any) {
         });
         
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`腾讯云机器翻译请求失败: ${response.status} ${response.statusText}\n${errorText}`);
+            throw new Error(`腾讯云机器翻译请求失败: ${response.status} ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -159,7 +158,7 @@ async function tencent(message: any) {
         }
         
     } catch (error) {
-        console.error('腾讯云机器翻译服务调用失败:', error);
+        console.error('腾讯云机器翻译服务调用失败');
         throw error;
     }
 }

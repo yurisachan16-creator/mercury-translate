@@ -1,4 +1,5 @@
 import {config} from "@/entrypoints/utils/config";
+import {getProviderLanguageCode} from '@/entrypoints/utils/languageRegistry';
 
 const MICROSOFT_TRANSLATE_URL = "https://edge.microsoft.com/translate/translatetext";
 
@@ -47,7 +48,7 @@ export async function translateMicrosoftTexts(
     });
 
     if (!resp.ok) {
-        throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(`翻译失败: ${resp.status} ${resp.statusText}`);
     }
 
     const result = await resp.json() as MicrosoftTranslation[];
@@ -64,11 +65,15 @@ export async function translateMicrosoftTexts(
     });
 }
 
-async function microsoft(message: {origin: string | string[]}) {
+async function microsoft(message: {origin: string | string[]; from?: string; to?: string}) {
     const origin = message.origin;
     const isSingleText = typeof origin === 'string';
     const texts: string[] = typeof origin === 'string' ? [origin] : origin;
-    const translations = await translateMicrosoftTexts(texts, config.from, config.to);
+    const translations = await translateMicrosoftTexts(
+        texts,
+        getProviderLanguageCode(typeof message.from === 'string' ? message.from : config.from, 'microsoft'),
+        getProviderLanguageCode(typeof message.to === 'string' ? message.to : config.to, 'microsoft'),
+    );
     if (!isSingleText) return translations;
 
     const translatedText = translations[0];

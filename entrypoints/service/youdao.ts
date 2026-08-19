@@ -166,7 +166,7 @@ async function youdao(message: any): Promise<string> {
     }
 
   } catch (error: any) {
-    console.error('有道翻译错误:', error);
+    console.error('有道翻译错误');
     throw new Error(`翻译失败: ${error.message || error}`);
   }
 }

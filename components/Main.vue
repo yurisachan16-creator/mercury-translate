@@ -4,32 +4,32 @@
   <el-row class="margin-bottom margin-left-2em settings-status-row">
     <el-col :span="18" class="lightblue rounded-corner">
       <div class="settings-status-copy">
-        <span class="settings-status-kicker">{{ config.on ? '正在工作' : '已暂停' }}</span>
-        <strong>插件状态</strong>
-        <small>{{ config.on ? '网页翻译与快捷功能均已启用' : '重新启用后即可继续翻译网页' }}</small>
+        <span class="settings-status-kicker">{{ config.on ? t('main.statusWorking') : t('main.statusPaused') }}</span>
+        <strong>{{ t('main.pluginStatus') }}</strong>
+        <small>{{ config.on ? t('main.statusEnabledDetail') : t('main.statusPausedDetail') }}</small>
       </div>
     </el-col>
 
     <el-col :span="6" class="flex-end settings-status-control">
-      <span class="settings-status-badge" :class="{ active: config.on }"><i />{{ config.on ? '已启用' : '已暂停' }}</span>
-      <el-switch class="settings-switch" v-model="config.on" aria-label="插件状态" size="large" @change="handlePluginStateChange" />
+      <span class="settings-status-badge" :class="{ active: config.on }"><i />{{ config.on ? t('main.enabled') : t('main.paused') }}</span>
+      <el-switch class="settings-switch" v-model="config.on" :aria-label="t('main.pluginStatus')" size="large" @change="handlePluginStateChange" />
     </el-col>
   </el-row>
 
   <!-- 占位符 -->
   <div v-if="!config.on">
-    <el-empty description="插件处于禁用状态" />
+    <el-empty :description="t('main.pluginDisabled')" />
   </div>
 
   <div v-show="config.on">
     <!--    翻译模式-->
     <el-row class="margin-bottom margin-left-2em settings-preference-row">
       <el-col :span="12" class="lightblue rounded-corner">
-        <span class="popup-text popup-vertical-left">翻译模式</span>
+        <span class="popup-text popup-vertical-left">{{ t('main.displayMode') }}</span>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.display" aria-label="翻译模式" placeholder="请选择翻译模式">
-          <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="item.label"
+        <el-select v-model="config.display" :aria-label="t('main.displayMode')" :placeholder="t('main.selectDisplayMode')">
+          <el-option class="select-left" v-for="item in localizedOptions.display" :key="item.value" :label="item.label"
             :value="item.value" />
         </el-select>
       </el-col>
@@ -38,11 +38,11 @@
     <!-- 默认目标语言 -->
     <el-row class="margin-bottom margin-left-2em settings-preference-row">
       <el-col :span="12" class="lightblue rounded-corner">
-        <span class="popup-text popup-vertical-left">默认目标语言</span>
+        <span class="popup-text popup-vertical-left">{{ t('main.defaultTargetLanguage') }}</span>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.to" aria-label="默认目标语言" placeholder="请选择目标语言">
-          <el-option class="select-left" v-for="item in options.to" :key="item.value" :label="item.label"
+        <el-select v-model="config.to" :aria-label="t('main.defaultTargetLanguage')" :placeholder="t('main.selectTargetLanguage')">
+          <el-option class="select-left" v-for="item in translationTargetOptions" :key="item.value" :label="item.label"
             :value="item.value" />
         </el-select>
       </el-col>
@@ -51,25 +51,25 @@
     <!-- 文本与视频使用独立的翻译服务 -->
     <el-row class="margin-bottom margin-left-2em settings-preference-row">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="网页、划词和悬停翻译使用的默认服务。视频字幕服务可以单独选择。" placement="top-start" :show-after="500">
-          <span class="popup-text popup-vertical-left">文本翻译服务<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+        <el-tooltip class="box-item" effect="dark" :content="t('main.textServiceTip')" placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">{{ t('main.textTranslationService') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
         </el-tooltip>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.service" aria-label="文本翻译服务" placeholder="请选择文本翻译服务">
-          <el-option class="select-left" v-for="item in options.services" :key="item.value" :label="item.label" :value="item.value" :disabled="item.disabled" />
+        <el-select v-model="config.service" :aria-label="t('main.textTranslationService')" :placeholder="t('main.selectTextService')" @change="ensureTextProviderPermission">
+          <el-option class="select-left" v-for="item in visibleServiceOptions" :key="item.value" :label="item.label" :value="item.value" :disabled="item.disabled" />
         </el-select>
       </el-col>
     </el-row>
 
     <el-row class="margin-bottom margin-left-2em settings-preference-row">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="YouTube 原生字幕下方显示的译文使用此服务，与文本翻译服务互不影响。" placement="top-start" :show-after="500">
-          <span class="popup-text popup-vertical-left">视频翻译服务<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+        <el-tooltip class="box-item" effect="dark" :content="t('main.videoServiceTip')" placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">{{ t('main.videoTranslationService') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
         </el-tooltip>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.videoService" aria-label="视频翻译服务" placeholder="请选择视频翻译服务">
+        <el-select v-model="config.videoService" :aria-label="t('main.videoTranslationService')" :placeholder="t('main.selectVideoService')" @change="ensureVideoProviderPermission">
           <el-option class="select-left" v-for="item in videoServiceOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-col>
@@ -78,15 +78,15 @@
     <!--    译文样式选择器-->
     <el-row v-show="config.display === 1" class="margin-bottom margin-left-2em settings-preference-row">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="选择双语模式下译文的显示样式，提供多种美观的效果" placement="top-start"
+        <el-tooltip class="box-item" effect="dark" :content="t('main.translationStyleTip')" placement="top-start"
           :show-after="500">
-          <span class="popup-text popup-vertical-left">译文样式<el-icon class="icon-margin">
+          <span class="popup-text popup-vertical-left">{{ t('main.translationStyle') }}<el-icon class="icon-margin">
               <InfoFilled />
             </el-icon></span>
         </el-tooltip>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.style" aria-label="译文样式" placeholder="请选择译文显示样式">
+        <el-select v-model="config.style" :aria-label="t('main.translationStyle')" :placeholder="t('main.selectTranslationStyle')">
           <el-option-group v-for="group in styleGroups" :key="group.value" :label="group.label">
             <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value"
               :class="item.class" />
@@ -97,20 +97,20 @@
 
     <section v-show="config.display === 1" class="style-preview-card" aria-live="polite">
       <div class="style-preview-heading">
-        <div><span>实时预览</span><strong>译文样式</strong></div>
+        <div><span>{{ t('main.livePreview') }}</span><strong>{{ t('main.translationStyle') }}</strong></div>
       </div>
       <div class="style-preview-example">
-        <p class="style-preview-source">Reading should feel calm and effortless.</p>
-        <p :key="config.style" class="style-preview-text" :class="currentStyleClass">阅读应该轻松、自然，不打断你的节奏。</p>
+        <p class="style-preview-source">{{ t('main.stylePreviewSource') }}</p>
+        <p :key="config.style" class="style-preview-text" :class="currentStyleClass">{{ t('main.stylePreviewText') }}</p>
       </div>
-      <small class="style-preview-note">切换上方选项即可预览译文在网页中的显示效果。</small>
+      <small class="style-preview-note">{{ t('main.stylePreviewNote') }}</small>
     </section>
   </div>
   </section>
 
   <div v-if="!config.on && !['settings-general', 'settings-image-translation'].includes(props.activeSection)" class="disabled-section">
-    <strong>插件当前已关闭</strong>
-    <p>请先在“通用设置”中启用插件，再调整该分类。</p>
+    <strong>{{ t('main.pluginCurrentlyOff') }}</strong>
+    <p>{{ t('main.enableInGeneralFirst') }}</p>
   </div>
 
   <div v-show="config.on" class="settings-main-sections">
@@ -132,7 +132,7 @@
             :config="config"
             :service="selectedConfigurationService"
             :compute="configurationCompute"
-            :options="options"
+            :options="localizedOptions"
             :is-valid-azure-endpoint="isValidAzureEndpoint"
           />
         </template>
@@ -144,17 +144,17 @@
     <section v-show="props.activeSection === 'settings-image-translation'" id="settings-image-translation" class="settings-section image-ocr-section">
       <div class="image-ocr-heading">
         <div>
-          <span class="image-ocr-kicker">Beta 测试</span>
-          <h2>图片翻译需要 OCR 语言包</h2>
-          <p>语言包会在运行时按需下载并缓存在浏览器本地，不会随扩展安装包一起下载。</p>
+          <span class="image-ocr-kicker">{{ t('main.betaTest') }}</span>
+          <h2>{{ t('main.imageOcrTitle') }}</h2>
+          <p>{{ t('main.imageOcrDescription') }}</p>
         </div>
-        <span class="image-ocr-runtime-badge">按需下载</span>
+        <span class="image-ocr-runtime-badge">{{ t('main.downloadOnDemand') }}</span>
       </div>
 
       <div class="image-ocr-recommendation">
         <div>
-          <strong>推荐先下载中文和 English</strong>
-          <p>自动检测默认使用这两种语言。识别日文图片前，再下载日本語语言包即可。</p>
+          <strong>{{ t('main.imageOcrRecommendedTitle') }}</strong>
+          <p>{{ t('main.imageOcrRecommendedDescription') }}</p>
         </div>
         <button
           type="button"
@@ -162,23 +162,23 @@
           :disabled="imageOcrRecommendedReady || imageOcrRecommendedDownloading"
           @click="downloadImageOcrLanguages(imageOcrRecommendedCodes)"
         >
-          {{ imageOcrRecommendedReady ? '推荐语言已就绪' : imageOcrRecommendedDownloading ? '下载中…' : '下载推荐语言' }}
+          {{ imageOcrRecommendedReady ? t('main.recommendedReady') : imageOcrRecommendedDownloading ? t('main.downloading') : t('main.downloadRecommended') }}
         </button>
       </div>
 
       <div class="image-ocr-pack-list">
         <article v-for="pack in imageOcrLanguagePacks" :key="pack.code" class="image-ocr-pack-card">
-          <div class="image-ocr-pack-icon">{{ pack.code === 'chi_sim' ? '中' : pack.code === 'eng' ? 'A' : '日' }}</div>
+          <div class="image-ocr-pack-icon">{{ ocrPackIcon(pack.code) }}</div>
           <div class="image-ocr-pack-copy">
             <div class="image-ocr-pack-title">
               <strong>{{ pack.label }}</strong>
-              <span v-if="pack.recommended" class="image-ocr-recommended">推荐</span>
+              <span v-if="pack.recommended" class="image-ocr-recommended">{{ t('main.recommended') }}</span>
             </div>
             <small>{{ pack.description }} · {{ pack.size }}</small>
           </div>
           <div class="image-ocr-pack-action">
             <span :class="['image-ocr-pack-status', { ready: imageOcrDownloadedCodes.includes(pack.code) }]">
-              {{ imageOcrDownloadedCodes.includes(pack.code) ? '已下载' : '未下载' }}
+              {{ imageOcrDownloadedCodes.includes(pack.code) ? t('main.downloaded') : t('main.notDownloaded') }}
             </span>
             <button
               type="button"
@@ -186,31 +186,41 @@
               :disabled="imageOcrDownloadedCodes.includes(pack.code) || imageOcrDownloadingCodes.includes(pack.code)"
               @click="downloadImageOcrLanguages([pack.code])"
             >
-              {{ imageOcrDownloadedCodes.includes(pack.code) ? '已就绪' : imageOcrDownloadingCodes.includes(pack.code) ? '下载中…' : '下载' }}
+              {{ imageOcrDownloadedCodes.includes(pack.code) ? t('main.ready') : imageOcrDownloadingCodes.includes(pack.code) ? t('main.downloading') : t('main.download') }}
             </button>
           </div>
         </article>
       </div>
 
       <p v-if="imageOcrDownloadError" class="image-ocr-error">{{ imageOcrDownloadError }}</p>
-      <p class="image-ocr-footnote">只有下载对应语言后，图片翻译才会执行文字识别。语言包由 Tesseract.js 下载并缓存到扩展本地存储。</p>
+      <div class="image-ocr-footnote-row">
+        <p class="image-ocr-footnote">{{ t('main.imageOcrFootnote') }}</p>
+        <button
+          type="button"
+          class="image-ocr-clear-button"
+          :disabled="imageOcrDownloadedCodes.length === 0 || imageOcrClearing"
+          @click="clearImageOcrLanguages"
+        >
+          {{ imageOcrClearing ? t('main.clearing') : t('main.clearDownloadedModels') }}
+        </button>
+      </div>
     </section>
 
     <!-- 视频字幕 Beta -->
     <section v-show="props.activeSection === 'settings-video'" id="settings-video" class="settings-section">
       <div class="video-settings-hero">
-        <div><span class="eyebrow">Beta 功能</span><h2>YouTube 视频字幕</h2><p>边看边译 YouTube 原生字幕；不上传音频，不改变播放器时间轴。</p></div>
-        <el-switch v-model="config.videoTranslationEnabled" class="settings-switch" aria-label="视频字幕翻译" />
+        <div><span class="eyebrow">{{ t('main.betaFeature') }}</span><h2>{{ t('main.youtubeSubtitles') }}</h2><p>{{ t('main.videoHeroDescription') }}</p></div>
+        <el-switch v-model="config.videoTranslationEnabled" class="settings-switch" :aria-label="t('main.videoSubtitleTranslation')" />
       </div>
 
       <el-row class="settings-control-row">
         <el-col :span="12" class="settings-control-label lightblue rounded-corner">
-          <el-tooltip class="box-item" effect="dark" content="视频字幕独立选择翻译服务，默认微软翻译；AI 服务会提前预取字幕，网页翻译仍使用上方的文本翻译服务。" placement="top-start" :show-after="500">
-            <span class="popup-text popup-vertical-left">视频翻译服务<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+          <el-tooltip class="box-item" effect="dark" :content="t('main.videoServiceAdvancedTip')" placement="top-start" :show-after="500">
+            <span class="popup-text popup-vertical-left">{{ t('main.videoTranslationService') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
           </el-tooltip>
         </el-col>
         <el-col :span="12" class="settings-control-field">
-          <el-select v-model="config.videoService" aria-label="视频字幕翻译服务" :disabled="!config.videoTranslationEnabled" placeholder="请选择服务">
+          <el-select v-model="config.videoService" :aria-label="t('main.videoSubtitleService')" :disabled="!config.videoTranslationEnabled" :placeholder="t('main.selectService')" @change="ensureVideoProviderPermission">
             <el-option class="select-left" v-for="item in videoServiceOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-col>
@@ -218,20 +228,20 @@
 
       <el-row class="settings-control-row">
         <el-col :span="12" class="settings-control-label lightblue rounded-corner">
-          <el-tooltip class="box-item" effect="dark" content="只调整 FluentRead 在播放器中显示的原文和译文字号，不改变 YouTube 原生字幕设置。" placement="top-start" :show-after="500">
-            <span class="popup-text popup-vertical-left">字幕字号<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+          <el-tooltip class="box-item" effect="dark" :content="t('main.subtitleFontSizeTip')" placement="top-start" :show-after="500">
+            <span class="popup-text popup-vertical-left">{{ t('main.subtitleFontSize') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
           </el-tooltip>
         </el-col>
         <el-col :span="12" class="settings-control-field">
-          <el-select v-model="config.videoSubtitleFontSize" aria-label="视频字幕字号" :disabled="!config.videoTranslationEnabled" placeholder="请选择字号">
-            <el-option class="select-left" v-for="size in videoSubtitleFontSizeOptions" :key="size" :label="size === 100 ? '默认' : `${size}%`" :value="size" />
+          <el-select v-model="config.videoSubtitleFontSize" :aria-label="t('main.videoSubtitleFontSize')" :disabled="!config.videoTranslationEnabled" :placeholder="t('main.selectFontSize')">
+            <el-option class="select-left" v-for="size in videoSubtitleFontSizeOptions" :key="size" :label="size === 100 ? t('main.defaultLabel') : `${size}%`" :value="size" />
           </el-select>
         </el-col>
       </el-row>
 
       <div class="video-settings-note">
-        <strong>使用方式</strong>
-        <p>打开 YouTube 视频的原生字幕后，FluentRead 会在字幕下方显示译文。机器翻译约提前 10 秒、AI 服务约提前 30 秒准备字幕；切换视频或关闭此功能会清理译文。</p>
+        <strong>{{ t('main.usage') }}</strong>
+        <p>{{ t('main.videoUsageDescription') }}</p>
       </div>
     </section>
 
@@ -241,9 +251,9 @@
     <section v-show="props.activeSection === 'settings-shortcuts'" id="settings-shortcuts" class="settings-section">
     <el-row class="settings-control-row" :class="{ 'custom-hotkey-row': config.hotkey === 'custom' }">
       <el-col :span="14" class="settings-control-label lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="按住指定快捷键并悬停在文本上进行翻译" placement="top-start" :show-after="500">
+        <el-tooltip class="box-item" effect="dark" :content="t('main.mouseHoverHotkeyTip')" placement="top-start" :show-after="500">
         <span class="popup-text popup-vertical-left">
-          鼠标悬浮快捷键
+          {{ t('main.mouseHoverHotkey') }}
           <el-icon class="icon-margin">
             <InfoFilled />
           </el-icon>
@@ -254,13 +264,13 @@
         <div class="hotkey-config">
           <el-select 
             v-model="config.hotkey" 
-            aria-label="鼠标悬浮快捷键"
-            placeholder="请选择快捷键" 
+            :aria-label="t('main.mouseHoverHotkey')"
+            :placeholder="t('main.selectHotkey')"
             size="small" 
             style="width: 100%"
             @change="handleMouseHotkeyChange"
           >
-            <el-option v-for="item in options.keys" :key="item.value" :label="item.label" :value="item.value" :disabled="item.disabled" :class="{ 'select-divider': item.disabled }" />
+            <el-option v-for="item in localizedOptions.keys" :key="item.value" :label="item.label" :value="item.value" :disabled="item.disabled" :class="{ 'select-divider': item.disabled }" />
           </el-select>
           
           <!-- 自定义快捷键显示（选择自定义时总是显示） -->
@@ -269,7 +279,7 @@
               {{ getCustomMouseHotkeyDisplayName() }}
             </span>
             <span class="hotkey-text placeholder-text" v-else>
-              点击设置自定义快捷键
+              {{ t('main.clickSetCustomHotkey') }}
             </span>
             <el-button size="small" type="text" @click="openCustomMouseHotkeyDialog" class="edit-button">
               <el-icon><Edit /></el-icon>
@@ -282,9 +292,9 @@
     <!-- 全文翻译快捷键选择 -->
     <el-row v-if="config.on" class="settings-control-row" :class="{ 'custom-hotkey-row': config.floatingBallHotkey === 'custom' }">
       <el-col :span="14" class="settings-control-label lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="（测试版）设置快捷键以便快速切换全文翻译状态，无需鼠标点击悬浮球" placement="top-start" :show-after="500">
+        <el-tooltip class="box-item" effect="dark" :content="t('main.fullPageHotkeyTip')" placement="top-start" :show-after="500">
         <span class="popup-text popup-vertical-left">
-          全文翻译快捷键
+          {{ t('main.fullPageHotkey') }}
           <el-icon class="icon-margin">
             <InfoFilled />
           </el-icon>
@@ -295,13 +305,13 @@
         <div class="hotkey-config">
           <el-select 
             v-model="config.floatingBallHotkey" 
-            aria-label="全文翻译快捷键"
-            placeholder="选择快捷键" 
+            :aria-label="t('main.fullPageHotkey')"
+            :placeholder="t('main.selectHotkey')"
             size="small" 
             style="width: 100%"
             @change="handleHotkeyChange"
           >
-            <el-option v-for="item in options.floatingBallHotkeys" :key="item.value" :label="item.label" :value="item.value" />
+            <el-option v-for="item in localizedOptions.floatingBallHotkeys" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
           
           <!-- 自定义快捷键显示（选择自定义时总是显示） -->
@@ -310,7 +320,7 @@
               {{ getCustomHotkeyDisplayName() }}
             </span>
             <span class="hotkey-text placeholder-text" v-else>
-              点击设置自定义快捷键
+              {{ t('main.clickSetCustomHotkey') }}
             </span>
             <el-button size="small" type="text" @click="openCustomHotkeyDialog" class="edit-button">
               <el-icon><Edit /></el-icon>
@@ -323,9 +333,9 @@
     <!-- 右键全文翻译开关 -->
     <el-row v-if="config.on" class="settings-control-row">
       <el-col :span="20" class="settings-control-label lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="在网页右键菜单中显示“流畅阅读翻译”或“流畅阅读取消翻译”入口；关闭后不会影响全文翻译快捷键和悬浮球" placement="top-start" :show-after="500">
+        <el-tooltip class="box-item" effect="dark" :content="t('main.contextMenuTip')" placement="top-start" :show-after="500">
           <span class="popup-text popup-vertical-left">
-            右键全文翻译
+            {{ t('main.contextMenuTranslate') }}
             <el-icon class="icon-margin">
               <InfoFilled />
             </el-icon>
@@ -333,7 +343,7 @@
         </el-tooltip>
       </el-col>
       <el-col :span="4" class="settings-control-field flex-end">
-        <el-switch v-model="config.contextMenuEnabled" class="settings-toggle" aria-label="右键全文翻译" />
+        <el-switch v-model="config.contextMenuEnabled" class="settings-toggle" :aria-label="t('main.contextMenuTranslate')" />
       </el-col>
     </el-row>
 
@@ -341,9 +351,9 @@
     <!-- 划词翻译模式选择 -->
     <el-row v-if="config.on" class="settings-control-row">
       <el-col :span="14" class="settings-control-label lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="选中文本后显示翻译入口；不再依赖鼠标悬停，可选择直接弹出、显示图标或显示小点" placement="top-start" :show-after="500">
+        <el-tooltip class="box-item" effect="dark" :content="t('main.selectionTranslatorTip')" placement="top-start" :show-after="500">
       <span class="popup-text popup-vertical-left">
-        划词翻译
+        {{ t('main.selectionTranslator') }}
         <el-icon class="icon-margin">
           <InfoFilled />
         </el-icon>
@@ -351,22 +361,22 @@
         </el-tooltip>
       </el-col>
       <el-col :span="10" class="settings-control-field flex-end">
-        <el-select v-model="config.selectionTranslatorMode" aria-label="划词翻译模式" placeholder="选择模式" size="small" style="width: 100%">
-          <el-option label="关闭" value="disabled" />
-          <el-option label="双语显示" value="bilingual" />
-          <el-option label="只显示译文" value="translation-only" />
+        <el-select v-model="config.selectionTranslatorMode" :aria-label="t('main.selectionTranslatorMode')" :placeholder="t('main.selectMode')" size="small" style="width: 100%">
+          <el-option :label="t('main.off')" value="disabled" />
+          <el-option :label="t('main.bilingualDisplay')" value="bilingual" />
+          <el-option :label="t('main.translationOnly')" value="translation-only" />
         </el-select>
       </el-col>
     </el-row>
     <el-row v-if="config.on && config.selectionTranslatorMode !== 'disabled'" class="settings-control-row">
       <el-col :span="14" class="settings-control-label lightblue rounded-corner">
-        <span class="popup-text popup-vertical-left">划词触发方式</span>
+        <span class="popup-text popup-vertical-left">{{ t('main.selectionTrigger') }}</span>
       </el-col>
       <el-col :span="10" class="settings-control-field flex-end">
-        <el-select v-model="config.selectionTranslatorTrigger" aria-label="划词翻译触发方式" placeholder="选择触发方式" size="small" style="width: 100%">
-          <el-option label="直接弹出" value="direct" />
-          <el-option label="显示图标" value="icon" />
-          <el-option label="显示小点" value="dot" />
+        <el-select v-model="config.selectionTranslatorTrigger" :aria-label="t('main.selectionTrigger')" :placeholder="t('main.selectTrigger')" size="small" style="width: 100%">
+          <el-option :label="t('main.directPopup')" value="direct" />
+          <el-option :label="t('main.showIcon')" value="icon" />
+          <el-option :label="t('main.showDot')" value="dot" />
         </el-select>
       </el-col>
     </el-row>
@@ -379,11 +389,11 @@
         <!-- 主题设置 -->
         <el-row class="settings-control-row">
           <el-col :span="12" class="settings-control-label lightblue rounded-corner">
-            <span class="popup-text popup-vertical-left">主题设置</span>
+            <span class="popup-text popup-vertical-left">{{ t('main.themeSettings') }}</span>
           </el-col>
           <el-col :span="12" class="settings-control-field">
-            <el-select v-model="config.theme" placeholder="请选择主题模式">
-              <el-option class="select-left" v-for="item in options.theme" :key="item.value" :label="item.label"
+            <el-select v-model="config.theme" :placeholder="t('main.selectThemeMode')">
+              <el-option class="select-left" v-for="item in localizedOptions.theme" :key="item.value" :label="item.label"
                          :value="item.value" />
             </el-select>
           </el-col>
@@ -392,15 +402,15 @@
         <!-- 缓存开关 -->
         <el-row class="settings-control-row">
           <el-col :span="20" class="settings-control-label lightblue rounded-corner">
-            <el-tooltip class="box-item" effect="dark" content="开启缓存可以提高翻译速度，减少重复请求，但可能导致翻译结果不是最新的" placement="top-start" :show-after="500">
-        <span class="popup-text popup-vertical-left">缓存翻译结果<el-icon class="icon-margin">
+            <el-tooltip class="box-item" effect="dark" :content="t('main.cacheTip')" placement="top-start" :show-after="500">
+        <span class="popup-text popup-vertical-left">{{ t('main.cacheTranslations') }}<el-icon class="icon-margin">
             <InfoFilled />
           </el-icon></span>
             </el-tooltip>
           </el-col>
 
           <el-col :span="4" class="settings-control-field flex-end">
-            <el-switch v-model="config.useCache" class="settings-toggle" aria-label="缓存翻译结果" />
+            <el-switch v-model="config.useCache" class="settings-toggle" :aria-label="t('main.cacheTranslations')" />
           </el-col>
         </el-row>
 
@@ -408,26 +418,40 @@
         <el-row class="settings-control-row">
           <el-col :span="20" class="settings-control-label ai-context-label lightblue rounded-corner">
             <el-tooltip class="box-item" effect="dark"
-                        content="开启后，AI 翻译会参考当前网页的标题、描述和相关正文片段；仅对大模型翻译服务生效。"
+                        :content="t('main.aiContextTip')"
                         placement="top-start" :show-after="500">
-              <span class="popup-text popup-vertical-left">AI 智能上下文<el-icon class="icon-margin">
+              <span class="popup-text popup-vertical-left">{{ t('main.aiContext') }}<el-icon class="icon-margin">
                   <InfoFilled />
                 </el-icon></span>
             </el-tooltip>
-            <small class="settings-control-hint">提升术语和歧义表达的语境准确度；首次请求还会额外生成摘要并增加一次调用。</small>
+            <small class="settings-control-hint">{{ t('main.aiContextHint') }}</small>
           </el-col>
 
           <el-col :span="4" class="settings-control-field flex-end">
-            <el-switch v-model="config.enableAIContext" :disabled="!canUseAIContext" class="settings-toggle" aria-label="AI 智能上下文" />
+            <el-switch v-model="config.enableAIContext" :disabled="!canUseAIContext" class="settings-toggle" :aria-label="t('main.aiContext')" />
+          </el-col>
+        </el-row>
+
+        <el-row class="settings-control-row">
+          <el-col :span="20" class="settings-control-label lightblue rounded-corner">
+            <el-tooltip class="box-item" effect="dark"
+                        :content="t('main.deeplxExperimentalTip')"
+                        placement="top-start" :show-after="500">
+              <span class="popup-text popup-vertical-left">{{ t('main.deeplxExperimentalService') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+            </el-tooltip>
+            <small class="settings-control-hint">{{ t('main.deeplxExperimentalHint') }}</small>
+          </el-col>
+          <el-col :span="4" class="settings-control-field flex-end">
+            <el-switch v-model="config.enableDeepLXExperimental" class="settings-toggle" :aria-label="t('main.enableDeeplxExperimental')" />
           </el-col>
         </el-row>
 
         <!-- 悬浮球开关 -->
       <el-row v-if="config.on" class="settings-control-row">
         <el-col :span="20" class="settings-control-label lightblue rounded-corner">
-          <el-tooltip class="box-item" effect="dark" content="（测试版）控制是否显示屏幕边缘的即时翻译悬浮球，用于对整个网页进行翻译" placement="top-start" :show-after="500">
+          <el-tooltip class="box-item" effect="dark" :content="t('main.floatingBallTip')" placement="top-start" :show-after="500">
           <span class="popup-text popup-vertical-left">
-            全文翻译悬浮球
+            {{ t('main.floatingBall') }}
             <el-icon class="icon-margin">
               <InfoFilled />
             </el-icon>
@@ -436,7 +460,7 @@
         </el-col>
 
         <el-col :span="4" class="settings-control-field flex-end">
-          <el-switch v-model="floatingBallEnabled" class="settings-toggle" aria-label="全文翻译悬浮球" />
+          <el-switch v-model="floatingBallEnabled" class="settings-toggle" :aria-label="t('main.floatingBall')" />
         </el-col>
       </el-row>
 
@@ -445,15 +469,15 @@
         <el-row class="settings-control-row">
           <el-col :span="20" class="settings-control-label lightblue rounded-corner">
             <el-tooltip class="box-item" effect="dark"
-                        content="动画效果（默认开）：禁用后将关闭加载/悬浮等动画，以节省GPU资源和电量。适合低配置设备或希望节省资源的用户。"
+                        :content="t('main.animationsTip')"
                         placement="top-start" :show-after="500">
-              <span class="popup-text popup-vertical-left">动画效果<el-icon class="icon-margin">
+              <span class="popup-text popup-vertical-left">{{ t('main.animations') }}<el-icon class="icon-margin">
                   <InfoFilled />
                 </el-icon></span>
             </el-tooltip>
           </el-col>
           <el-col :span="4" class="settings-control-field flex-end">
-            <el-switch v-model="config.animations" class="settings-toggle" aria-label="动画效果" />
+            <el-switch v-model="config.animations" class="settings-toggle" :aria-label="t('main.animations')" />
           </el-col>
         </el-row>
 
@@ -461,16 +485,16 @@
         <el-row class="settings-control-row">
           <el-col :span="12" class="settings-control-label lightblue rounded-corner">
             <el-tooltip class="box-item" effect="dark"
-                        content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。"
+                        :content="t('main.inputBoxTranslationTip')"
                         placement="top-start" :show-after="500">
-              <span class="popup-text popup-vertical-left">输入框翻译<el-icon class="icon-margin">
+              <span class="popup-text popup-vertical-left">{{ t('main.inputBoxTranslation') }}<el-icon class="icon-margin">
                   <InfoFilled />
                 </el-icon></span>
             </el-tooltip>
           </el-col>
           <el-col :span="12" class="settings-control-field">
-            <el-select v-model="config.inputBoxTranslationTrigger" placeholder="请选择触发方式">
-              <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" 
+            <el-select v-model="config.inputBoxTranslationTrigger" :placeholder="t('main.selectTrigger')">
+              <el-option class="select-left" v-for="item in localizedOptions.inputBoxTranslationTrigger" :key="item.value"
                          :label="item.label" :value="item.value" />
             </el-select>
           </el-col>
@@ -479,10 +503,10 @@
         <!-- 输入框翻译目标语言 -->
         <el-row v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="settings-control-row">
           <el-col :span="12" class="settings-control-label lightblue rounded-corner">
-            <span class="popup-text popup-vertical-left">翻译目标语言</span>
+            <span class="popup-text popup-vertical-left">{{ t('main.translationTargetLanguage') }}</span>
           </el-col>
           <el-col :span="12" class="settings-control-field">
-            <el-select v-model="config.inputBoxTranslationTarget" placeholder="请选择目标语言">
+            <el-select v-model="config.inputBoxTranslationTarget" :placeholder="t('main.selectTargetLanguage')">
               <el-option class="select-left" v-for="item in options.inputBoxTranslationTarget" :key="item.value" 
                          :label="item.label" :value="item.value" />
             </el-select>
@@ -492,9 +516,9 @@
         <!-- 翻译并发数 -->
         <el-row class="settings-control-row">
           <el-col :span="12" class="settings-control-label lightblue rounded-corner">
-            <el-tooltip class="box-item" effect="dark" content="控制同时进行的最大翻译任务数，数值越高翻译速度越快，但可能占用更多系统资源" placement="top-start"
+            <el-tooltip class="box-item" effect="dark" :content="t('main.concurrentTip')" placement="top-start"
                         :show-after="500">
-          <span class="popup-text popup-vertical-left">翻译并发数<el-icon class="icon-margin">
+          <span class="popup-text popup-vertical-left">{{ t('main.concurrentTranslations') }}<el-icon class="icon-margin">
               <InfoFilled />
             </el-icon></span>
             </el-tooltip>
@@ -515,46 +539,46 @@
         <!-- 使用代理转发 -->
         <el-row v-show="compute.showProxy" class="settings-control-row">
           <el-col :span="8" class="settings-control-label lightblue rounded-corner">
-            <el-tooltip class="box-item" effect="dark" content="使用代理可以解决网络无法访问的问题，如不熟悉代理设置请留空！" placement="top-start"
+            <el-tooltip class="box-item" effect="dark" :content="t('main.proxyTip')" placement="top-start"
                         :show-after="500">
-              <span class="popup-text popup-vertical-left">代理地址<el-icon class="icon-margin">
+              <span class="popup-text popup-vertical-left">{{ t('main.proxyAddress') }}<el-icon class="icon-margin">
                   <InfoFilled />
                 </el-icon></span>
             </el-tooltip>
           </el-col>
           <el-col :span="16" class="settings-control-field">
-            <el-input v-model="config.proxy[config.service]" placeholder="默认不使用代理" />
+            <el-input v-model="config.proxy[config.service]" :placeholder="t('main.noProxyByDefault')" @change="ensureTextProviderPermission(config.service)" />
           </el-col>
         </el-row>
 
         <!-- 角色和模板 -->
         <el-row v-show="compute.showAI" class="settings-control-row">
           <el-col :span="8" class="settings-control-label lightblue rounded-corner">
-            <el-tooltip class="box-item" effect="dark" content="以系统身份 system 发送的对话，常用于指定 AI 要扮演的角色"
+            <el-tooltip class="box-item" effect="dark" :content="t('main.systemRoleTip')"
               placement="top-start" :show-after="500">
-              <span class="popup-text popup-vertical-left">system<el-icon class="icon-margin">
+              <span class="popup-text popup-vertical-left">{{ t('main.systemRole') }}<el-icon class="icon-margin">
                   <InfoFilled />
                 </el-icon></span>
             </el-tooltip>
           </el-col>
           <el-col :span="16" class="settings-control-field">
             <el-input type="textarea" v-model="config.system_role[config.service]" maxlength="8192"
-              placeholder="system message " />
+              :placeholder="t('main.systemRolePlaceholder')" />
           </el-col>
         </el-row>
         <el-row v-show="compute.showAI" class="settings-control-row">
           <el-col :span="8" class="settings-control-label lightblue rounded-corner">
             <el-tooltip class="box-item" effect="dark"
-              content="以用户身份 user 发送的对话，其中{{to}}表示目标语言，{{origin}}表示待翻译的文本内容，两者不可缺少。"
+              :content="t('main.userRoleTip')"
               placement="top-start" :show-after="500">
-              <span class="popup-text popup-vertical-left">user<el-icon class="icon-margin">
+              <span class="popup-text popup-vertical-left">{{ t('main.userRole') }}<el-icon class="icon-margin">
                   <InfoFilled />
                 </el-icon></span>
             </el-tooltip>
           </el-col>
           <el-col :span="16" class="settings-control-field">
             <el-input type="textarea" v-model="config.user_role[config.service]" maxlength="8192"
-              placeholder="user message template" />
+              :placeholder="t('main.userRolePlaceholder')" />
           </el-col>
         </el-row>
         <!-- 恢夏默认模板按钮 -->
@@ -564,7 +588,7 @@
               <el-icon>
                 <Refresh />
               </el-icon>
-              恢复默认模板
+              {{ t('main.restoreDefaultTemplate') }}
             </el-button>
           </el-col>
         </el-row>
@@ -575,30 +599,30 @@
         <!-- 配置导入导出 -->
         <el-row class="margin-bottom margin-left-2em">
           <el-col :span="24">
-            <el-divider content-position="center">配置管理</el-divider>
+            <el-divider content-position="center">{{ t('main.configManagement') }}</el-divider>
           </el-col>
         </el-row>
 
-        <section class="config-history-panel" aria-label="最近配置">
+        <section class="config-history-panel" :aria-label="t('main.recentConfigs')">
           <div class="config-history-heading">
             <div>
-              <span class="config-history-kicker">配置版本</span>
-              <h3>最近 5 次配置</h3>
-              <p>修改会自动保存，保留最近的稳定快照，可随时恢复。</p>
+              <span class="config-history-kicker">{{ t('main.configVersion') }}</span>
+              <h3>{{ t('main.recentFiveConfigs') }}</h3>
+              <p>{{ t('main.configHistoryDescription') }}</p>
             </div>
             <div class="config-history-actions">
               <el-button
                 size="small"
                 :disabled="historyBusy || !canUndo"
-                aria-label="撤销配置恢复"
+                :aria-label="t('main.undoConfigRestore')"
                 @click="runHistoryAction('undo')"
-              >撤销</el-button>
+              >{{ t('main.undo') }}</el-button>
               <el-button
                 size="small"
                 :disabled="historyBusy || !canRedo"
-                aria-label="重做配置恢复"
+                :aria-label="t('main.redoConfigRestore')"
                 @click="runHistoryAction('redo')"
-              >重做</el-button>
+              >{{ t('main.redo') }}</el-button>
             </div>
           </div>
 
@@ -609,7 +633,7 @@
               class="config-history-entry"
               :class="{ current: entry.version === currentHistoryVersion }"
             >
-              <div class="config-history-version"><b>v{{ entry.version }}</b><span v-if="entry.version === currentHistoryVersion">当前</span></div>
+              <div class="config-history-version"><b>v{{ entry.version }}</b><span v-if="entry.version === currentHistoryVersion">{{ t('main.current') }}</span></div>
               <div class="config-history-detail">
                 <strong>{{ historySummary(entry) }}</strong>
                 <small>{{ formatHistoryTime(entry.savedAt) }}</small>
@@ -619,12 +643,12 @@
                 text
                 type="primary"
                 :disabled="historyBusy || entry.version === currentHistoryVersion"
-                :aria-label="`恢复配置 v${entry.version}`"
+                :aria-label="`${t('main.restoreConfigVersion')} v${entry.version}`"
                 @click="runHistoryAction('restore', entry.version)"
-              >恢复</el-button>
+              >{{ t('main.restore') }}</el-button>
             </article>
           </div>
-          <div v-else class="config-history-empty">还没有可恢复的配置版本。</div>
+          <div v-else class="config-history-empty">{{ t('main.noRestorableConfigs') }}</div>
         </section>
 
         <el-row class="margin-bottom margin-left-2em">
@@ -633,7 +657,7 @@
               <el-icon>
                 <Download />
               </el-icon>
-              导出配置
+              {{ t('main.exportConfig') }}
             </el-button>
           </el-col>
           <el-col :span="12">
@@ -641,7 +665,7 @@
               <el-icon>
                 <Upload />
               </el-icon>
-              导入配置
+              {{ t('main.importConfig') }}
             </el-button>
           </el-col>
         </el-row>
@@ -656,9 +680,9 @@
         <!-- 导入配置 -->
         <el-row v-if="showImportBox" class="margin-bottom margin-left-2em">
           <el-col :span="24">
-            <el-input v-model="importData" type="textarea" :rows="8" placeholder="请在此处粘贴您的JSON配置" />
+            <el-input v-model="importData" type="textarea" :rows="8" :placeholder="t('main.pasteJsonConfig')" />
             <div style="margin-top: 10px; text-align: right;">
-              <el-button @click="saveImport">保存</el-button>
+              <el-button @click="saveImport">{{ t('main.save') }}</el-button>
             </div>
           </el-col>
         </el-row>
@@ -690,7 +714,8 @@
 
 // Main 处理配置信息
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import { customModelString, models, options, resolveConfiguredModel, services, servicesType, defaultOption } from "../entrypoints/utils/option";
+import {useI18n} from 'vue-i18n';
+import { customModelString, getLocalizedOptions, models, options, resolveConfiguredModel, services, servicesType, defaultOption } from "../entrypoints/utils/option";
 import { Config, normalizeConfig, VIDEO_SUBTITLE_FONT_SIZE_OPTIONS } from "@/entrypoints/utils/model";
 import { InfoFilled, Refresh, Edit, Upload, Download } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -706,9 +731,12 @@ import {
   IMAGE_OCR_LANGUAGE_PACKS,
   IMAGE_OCR_LANGUAGE_STATE_KEY,
   IMAGE_OCR_RECOMMENDED_LANGUAGES,
+  getLocalizedImageOcrLanguagePacks,
   normalizeImageOcrLanguageCodes,
   type ImageOcrLanguageCode,
 } from '@/entrypoints/utils/imageOcrLanguages';
+import {OCR_LANGUAGE_ASSET_BASE_URL} from '@/entrypoints/utils/ocrLanguageAssets';
+import {requestProviderHostPermission, requestUrlHostPermission} from '@/entrypoints/utils/providerPermissions';
 import {
   config as runtimeConfig,
   configHistoryReady,
@@ -723,12 +751,14 @@ import {
   type ConfigHistoryEntry,
   type ConfigHistoryState,
 } from '@/entrypoints/utils/config';
+import {getTranslationTargetOptionsForProvider} from '@/entrypoints/utils/languageRegistry';
 
 const props = withDefaults(defineProps<{
   activeSection?: string
 }>(), {
   activeSection: 'settings-general',
 })
+const {t} = useI18n({useScope: 'global'});
 
 // 初始化深色模式媒体查询
 const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -746,13 +776,16 @@ function updateTheme(theme: string) {
 
 // 配置信息
 const config = ref(new Config());
+const translationTargetOptions = computed(() => getTranslationTargetOptionsForProvider(config.value.service));
+const localizedOptions = computed(() => getLocalizedOptions(t));
 const persistConfig = (value: unknown) => requestConfigSave(value, browser.runtime.sendMessage.bind(browser.runtime));
 let lastSerialized = '';
-const imageOcrLanguagePacks = IMAGE_OCR_LANGUAGE_PACKS;
+const imageOcrLanguagePacks = computed(() => getLocalizedImageOcrLanguagePacks(t));
 const imageOcrRecommendedCodes = IMAGE_OCR_RECOMMENDED_LANGUAGES;
 const imageOcrDownloadedCodes = ref<ImageOcrLanguageCode[]>([]);
 const imageOcrDownloadingCodes = ref<ImageOcrLanguageCode[]>([]);
 const imageOcrDownloadError = ref('');
+const imageOcrClearing = ref(false);
 
 const imageOcrRecommendedReady = computed(() =>
   imageOcrRecommendedCodes.every(code => imageOcrDownloadedCodes.value.includes(code)),
@@ -773,18 +806,76 @@ async function downloadImageOcrLanguages(languages: ImageOcrLanguageCode[]) {
   imageOcrDownloadError.value = '';
   imageOcrDownloadingCodes.value = [...new Set([...imageOcrDownloadingCodes.value, ...pending])];
   try {
+    if (!await requestUrlHostPermission(OCR_LANGUAGE_ASSET_BASE_URL)) {
+      throw new Error(t('main.ocrPermissionDenied'));
+    }
     const response = await browser.runtime.sendMessage({
       type: 'fluentReadImageOcrDownload',
       languages: pending,
     }) as { success?: boolean; languages?: unknown; error?: string } | undefined;
-    if (!response?.success) throw new Error(response?.error || '语言包下载失败');
+    if (!response?.success) throw new Error(response?.error || t('main.languagePackDownloadFailed'));
     imageOcrDownloadedCodes.value = normalizeImageOcrLanguageCodes(response.languages);
   } catch (error) {
     imageOcrDownloadError.value = error instanceof Error
-      ? `${error.message}。请检查网络后重试。`
-      : '语言包下载失败，请检查网络后重试。';
+      ? `${error.message}${t('main.checkNetworkRetrySuffix')}`
+      : t('main.languagePackDownloadFailedRetry');
   } finally {
     imageOcrDownloadingCodes.value = imageOcrDownloadingCodes.value.filter(code => !pending.includes(code));
+  }
+}
+
+function ocrPackIcon(code: ImageOcrLanguageCode): string {
+  return ({chi_sim: '中', chi_tra: '繁', eng: 'A', jpn: '日', kor: '한'} as Record<ImageOcrLanguageCode, string>)[code];
+}
+
+async function clearImageOcrLanguages() {
+  try {
+    await ElMessageBox.confirm(
+      t('main.clearOcrModelsMessage'),
+      t('main.clearOcrModelsTitle'),
+      {confirmButtonText: t('main.clear'), cancelButtonText: t('main.cancel'), type: 'warning'},
+    );
+  } catch {
+    return;
+  }
+
+  imageOcrClearing.value = true;
+  imageOcrDownloadError.value = '';
+  try {
+    const response = await browser.runtime.sendMessage({type: 'mercuryImageOcrClear'}) as {
+      success?: boolean;
+      error?: string;
+    } | undefined;
+    if (!response?.success) throw new Error(response?.error || t('main.ocrModelClearFailed'));
+    imageOcrDownloadedCodes.value = [];
+    imageOcrDownloadingCodes.value = [];
+    ElMessage.success(t('main.ocrModelsCleared'));
+  } catch (error) {
+    imageOcrDownloadError.value = error instanceof Error ? error.message : t('main.ocrModelClearFailed');
+  } finally {
+    imageOcrClearing.value = false;
+  }
+}
+
+async function ensureVideoProviderPermission(service: string) {
+  try {
+    if (await requestProviderHostPermission(service, config.value)) return;
+    config.value.videoService = services.chromeTranslator;
+    ElMessage.error(t('main.subtitleProviderPermissionDenied'));
+  } catch (error) {
+    config.value.videoService = services.chromeTranslator;
+    ElMessage.error(error instanceof Error ? error.message : t('main.subtitleProviderPermissionFailed'));
+  }
+}
+
+async function ensureTextProviderPermission(service: string) {
+  try {
+    if (await requestProviderHostPermission(service, config.value)) return;
+    config.value.service = services.chromeTranslator;
+    ElMessage.error(t('main.textProviderPermissionDenied'));
+  } catch (error) {
+    config.value.service = services.chromeTranslator;
+    ElMessage.error(error instanceof Error ? error.message : t('main.textProviderPermissionFailed'));
   }
 }
 
@@ -810,14 +901,14 @@ void configReady
     hydrated = true;
     updateTheme(config.value.theme || 'auto');
   })
-  .catch((error) => console.warn('[FluentRead] 无法读取本地配置', error));
+  .catch((error) => console.warn('[Mercury Translate] 无法读取本地配置', error));
 
 watch(config, (newValue) => {
   if (!hydrated || applyingExternalConfig) return;
   const serialized = JSON.stringify(newValue);
   if (serialized === lastSerialized) return;
   lastSerialized = serialized;
-  void persistConfig(newValue).catch((error) => console.warn('[FluentRead] 保存设置失败', error));
+  void persistConfig(newValue).catch((error) => console.warn('[Mercury Translate] 保存设置失败', error));
 }, { deep: true, flush: 'sync' });
 
 // 设置页关闭前提交最新快照，避免 Firefox 销毁页面时丢失最后一次修改。
@@ -825,8 +916,8 @@ watch(config, (newValue) => {
 function persistOnPageExit() {
   if (!hydrated || pageExitSaveStarted) return;
   pageExitSaveStarted = true;
-  void saveConfig(config.value).catch((error) => console.warn('[FluentRead] 设置页关闭前本地保存失败', error));
-  void persistConfig(config.value).catch((error) => console.warn('[FluentRead] 设置页关闭前后台保存失败', error));
+  void saveConfig(config.value).catch((error) => console.warn('[Mercury Translate] 设置页关闭前本地保存失败', error));
+  void persistConfig(config.value).catch((error) => console.warn('[Mercury Translate] 设置页关闭前后台保存失败', error));
 }
 
 onUnmounted(() => {
@@ -861,10 +952,13 @@ const aiContextModel = computed(() => resolveConfiguredModel(
   config.value.customModel[config.value.service],
 ));
 const canUseAIContext = computed(() => servicesType.isUseAIContext(config.value.service, aiContextModel.value));
-const videoServiceOptions = computed(() => options.services.filter((item: any) => !item.disabled));
+const visibleServiceOptions = computed(() => localizedOptions.value.services.filter((item: any) =>
+  item.value !== services.deeplx || config.value.enableDeepLXExperimental,
+));
+const videoServiceOptions = computed(() => visibleServiceOptions.value.filter((item: any) => !item.disabled));
 const videoSubtitleFontSizeOptions = VIDEO_SUBTITLE_FONT_SIZE_OPTIONS;
 const filteredServices = computed(() =>
-  options.services.filter((item: any) =>
+  visibleServiceOptions.value.filter((item: any) =>
     !([item.google].includes(item.value) && config.value.display !== 1),
   ),
 );
@@ -916,6 +1010,12 @@ watch(() => config.value.theme, (newTheme) => {
   updateTheme(newTheme || 'auto');
 });
 
+watch(() => config.value.enableDeepLXExperimental, (enabled) => {
+  if (enabled) return;
+  if (config.value.service === services.deeplx) config.value.service = services.chromeTranslator;
+  if (config.value.videoService === services.deeplx) config.value.videoService = services.chromeTranslator;
+});
+
 // 使用 onchange 监听系统主题变化
 darkModeMediaQuery.onchange = () => {
   if (config.value.theme === 'auto') {
@@ -932,32 +1032,32 @@ onUnmounted(() => {
 
 // 计算样式分组
 const styleGroups = computed(() => {
-  const groups = options.styles.filter(item => item.disabled);
+  const groups = localizedOptions.value.styles.filter(item => item.disabled);
   return groups.map(group => ({
     ...group,
-    options: options.styles.filter(item => !item.disabled && item.group === group.value)
+    options: localizedOptions.value.styles.filter(item => !item.disabled && item.group === group.value)
   }));
 });
 
 const currentStyleClass = computed(() =>
-  options.styles.find(item => item.value === config.value.style && !item.disabled)?.class || 'fluent-display-default'
+  localizedOptions.value.styles.find(item => item.value === config.value.style && !item.disabled)?.class || 'fluent-display-default'
 );
 
 // 恢复默认模板
 const resetTemplate = () => {
   ElMessageBox.confirm(
-    '确定要恢复默认的 system 和 user 模板吗？此操作将覆盖当前的自定义模板。',
-    '恢复默认模板',
+    t('main.restoreTemplateConfirmMessage'),
+    t('main.restoreDefaultTemplate'),
     {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+      confirmButtonText: t('main.confirm'),
+      cancelButtonText: t('main.cancel'),
       type: 'warning',
     }
   ).then(() => {
     config.value.system_role[config.value.service] = defaultOption.system_role;
     config.value.user_role[config.value.service] = defaultOption.user_role;
     ElMessage({
-      message: '已成功恢复默认翻译模板',
+      message: t('main.restoreTemplateSuccess'),
       type: 'success',
       duration: 2000
     });
@@ -1061,7 +1161,7 @@ const handleCustomHotkeyConfirm = (hotkey: string) => {
   config.value.floatingBallHotkey = 'custom';
   
   ElMessage({
-    message: hotkey === 'none' ? '已禁用快捷键' : `快捷键已设置为: ${getCustomHotkeyDisplayName()}`,
+    message: hotkey === 'none' ? t('main.hotkeyDisabled') : `${t('main.hotkeySetPrefix')} ${getCustomHotkeyDisplayName()}`,
     type: 'success',
     duration: 2000
   });
@@ -1080,7 +1180,7 @@ const getCustomHotkeyDisplayName = () => {
   if (!config.value.customFloatingBallHotkey) return '';
   
   if (config.value.customFloatingBallHotkey === 'none') {
-    return '已禁用';
+    return t('main.disabled');
   }
   
   const parsed = parseHotkey(config.value.customFloatingBallHotkey);
@@ -1111,7 +1211,7 @@ const handleCustomMouseHotkeyConfirm = (hotkey: string) => {
   config.value.hotkey = 'custom';
   
   ElMessage({
-    message: hotkey === 'none' ? '已禁用快捷键' : `快捷键已设置为: ${getCustomMouseHotkeyDisplayName()}`,
+    message: hotkey === 'none' ? t('main.hotkeyDisabled') : `${t('main.hotkeySetPrefix')} ${getCustomMouseHotkeyDisplayName()}`,
     type: 'success',
     duration: 2000
   });
@@ -1130,7 +1230,7 @@ const getCustomMouseHotkeyDisplayName = () => {
   if (!config.value.customHotkey) return '';
   
   if (config.value.customHotkey === 'none') {
-    return '已禁用';
+    return t('main.disabled');
   }
   
   const parsed = parseHotkey(config.value.customHotkey);
@@ -1142,7 +1242,7 @@ const handleConcurrentChange = (currentValue: number | undefined) => {
   // 验证并发数量的有效性
   if (currentValue === undefined || currentValue < 1 || currentValue > 100) {
     ElMessage({
-      message: '并发数量必须在 1-100 之间',
+      message: t('main.concurrentRangeError'),
       type: 'warning',
       duration: 2000
     });
@@ -1152,7 +1252,7 @@ const handleConcurrentChange = (currentValue: number | undefined) => {
   }
   
   ElMessage({
-    message: `并发数量已更新为 ${currentValue}`,
+    message: `${t('main.concurrentUpdatedPrefix')} ${currentValue}`,
     type: 'success',
     duration: 2000
   });
@@ -1171,8 +1271,8 @@ const canRedo = computed(() => configHistory.value.cursor >= 0 && configHistory.
 
 const formatHistoryTime = (savedAt: string): string => {
   const date = new Date(savedAt);
-  if (Number.isNaN(date.getTime())) return '时间未知';
-  return new Intl.DateTimeFormat('zh-CN', {
+  if (Number.isNaN(date.getTime())) return t('main.unknownTime');
+  return new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -1182,8 +1282,9 @@ const formatHistoryTime = (savedAt: string): string => {
 };
 
 const historySummary = (entry: ConfigHistoryEntry): string => {
-  const target = options.to.find((item: any) => item.value === entry.config.to)?.label || entry.config.to;
-  const service = options.services.find((item: any) => item.value === entry.config.service)?.label || entry.config.service;
+  const target = getTranslationTargetOptionsForProvider(entry.config.service)
+    .find(item => item.value === entry.config.to)?.label || entry.config.to;
+  const service = localizedOptions.value.services.find((item: any) => item.value === entry.config.service)?.label || entry.config.service;
   return `${target} · ${service}`;
 };
 
@@ -1205,13 +1306,13 @@ const runHistoryAction = async (action: ConfigHistoryAction, version?: number) =
     );
     configHistory.value = nextHistory;
     ElMessage({
-      message: action === 'restore' ? `已恢复配置 v${version}` : action === 'undo' ? '已撤销配置恢复' : '已重做配置恢复',
+      message: action === 'restore' ? `${t('main.restoredConfigVersion')} v${version}` : action === 'undo' ? t('main.undoConfigRestoreSuccess') : t('main.redoConfigRestoreSuccess'),
       type: 'success',
       duration: 1600,
     });
   } catch (error) {
     ElMessage({
-      message: `配置历史操作失败：${error instanceof Error ? error.message : '请稍后重试'}`,
+      message: `${t('main.configHistoryFailedPrefix')}${error instanceof Error ? error.message : t('main.tryAgainLater')}`,
       type: 'error',
     });
   } finally {
@@ -1245,7 +1346,7 @@ const handleExport = async () => {
     showImportBox.value = false;
   } catch (error) {
     ElMessage({
-      message: `导出配置失败：${error instanceof Error ? error.message : '配置格式错误'}`,
+      message: `${t('main.exportConfigFailedPrefix')}${error instanceof Error ? error.message : t('main.invalidConfigFormat')}`,
       type: 'error',
     });
   }
@@ -1261,14 +1362,14 @@ const saveImport = async () => {
     const parsedConfig = JSON.parse(importData.value);
     if (!isConfigImportValid(parsedConfig)) {
       ElMessage({
-        message: '配置无效或格式不正确, 请检查!',
+        message: t('main.invalidConfig'),
         type: 'error',
       });
       return;
     }
     await persistConfig(normalizeConfig(parsedConfig));
     ElMessage({
-      message: '配置导入成功!',
+      message: t('main.importConfigSuccess'),
       type: 'success',
     });
     showImportBox.value = false;
@@ -1276,7 +1377,7 @@ const saveImport = async () => {
     // Optionally, reload the extension or relevant parts
   } catch (e) {
     ElMessage({
-      message: '配置格式错误, 请检查!',
+      message: t('main.invalidConfigFormatCheck'),
       type: 'error',
     });
   }
@@ -1429,7 +1530,20 @@ const saveImport = async () => {
 .image-ocr-download-button { min-width: 58px; min-height: 30px; padding: 0 10px; }
 .image-ocr-download-button:disabled { color: #18835d; background: #effbf6; cursor: default; }
 .image-ocr-error { margin: 0 12px; color: #d9345e; font-size: 11px; line-height: 1.5; }
-.image-ocr-footnote { margin: 0 12px; color: #8b93a4; font-size: 10px; line-height: 1.5; }
+.image-ocr-footnote-row { display: flex; align-items: center; gap: 14px; margin: 0 12px; }
+.image-ocr-footnote { flex: 1; margin: 0; color: #8b93a4; font-size: 10px; line-height: 1.5; }
+.image-ocr-clear-button {
+  flex: none;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  color: #687083;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+}
+.image-ocr-clear-button:disabled { cursor: default; opacity: .45; }
 
 :root.dark .image-ocr-heading h2,
 :root.dark .image-ocr-recommendation strong,
@@ -1440,6 +1554,7 @@ const saveImport = async () => {
 :root.dark .image-ocr-recommendation,
 :root.dark .image-ocr-pack-card { border-color: #30333c; background: #252830; }
 :root.dark .image-ocr-recommendation { background: linear-gradient(135deg, rgba(239, 71, 118, .12), #252830); }
+:root.dark .image-ocr-clear-button { border-color: #40444f; color: #b6bdca; }
 
 .settings-status-row {
   align-items: center;
@@ -1800,5 +1915,6 @@ const saveImport = async () => {
   .image-ocr-pack-card { align-items: flex-start; flex-wrap: wrap; }
   .image-ocr-pack-copy { min-width: calc(100% - 54px); }
   .image-ocr-pack-action { width: 100%; justify-content: flex-end; }
+  .image-ocr-footnote-row { align-items: flex-start; flex-direction: column; }
 }
 </style>

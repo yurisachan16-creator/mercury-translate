@@ -35,7 +35,7 @@ export class Config {
     videoTranslationEnabled: boolean; // 是否启用视频字幕翻译 Beta
     videoService: string; // 视频字幕独立翻译服务
     videoServiceDefaultMigrated: boolean; // 是否已迁移视频字幕默认服务
-    videoSubtitleVisible: boolean; // 是否显示 FluentRead 视频字幕
+    videoSubtitleVisible: boolean; // 是否显示 Mercury Translate 视频字幕
     videoSubtitleDisplayMode: VideoSubtitleDisplayMode; // 视频字幕显示模式
     videoSubtitleFontSize: number; // 视频字幕字号百分比
     token: IMapping;
@@ -68,6 +68,7 @@ export class Config {
     disableSelectionTranslator: boolean; // 是否禁用划词翻译
     selectionAreaEnabled: boolean; // 是否启用圈选翻译
     disableImageTranslator: boolean; // 是否禁用图片翻译
+    enableDeepLXExperimental: boolean; // 是否显式启用实验性 DeepLX 服务
     deeplx: string; // DeepLX 服务地址
     selectionTranslatorMode: string; // 划词翻译显示模式: 'disabled' | 'bilingual' | 'translation-only'
     selectionTranslatorTrigger: string; // 划词翻译触发方式: 'direct' | 'icon' | 'dot'
@@ -94,7 +95,7 @@ export class Config {
         this.hotkey = defaultOption.hotkey;
         this.service = defaultOption.service;
         this.videoTranslationEnabled = false; // Beta 功能默认关闭
-        this.videoService = services.microsoft; // 视频字幕默认使用微软翻译
+        this.videoService = services.chromeTranslator; // 视频字幕默认使用本地翻译
         this.videoServiceDefaultMigrated = true;
         this.videoSubtitleVisible = true; // 默认显示视频译文
         this.videoSubtitleDisplayMode = 'bilingual'; // 默认双语显示
@@ -129,6 +130,7 @@ export class Config {
         this.disableSelectionTranslator = true; // 默认关闭划词翻译
         this.selectionAreaEnabled = false; // 圈选翻译需要用户主动开启，避免意外截图
         this.disableImageTranslator = true; // 默认关闭图片翻译，避免首次安装后扫描网页图片
+        this.enableDeepLXExperimental = false; // 实验性联网服务必须由用户主动开启
         this.deeplx = defaultOption.deeplx; // DeepLX 默认服务地址
         this.selectionTranslatorMode = 'disabled'; // 默认关闭划词翻译
         this.selectionTranslatorTrigger = 'icon'; // 默认显示可发现的操作图标
@@ -234,17 +236,29 @@ export function normalizeConfig(value: unknown): Config {
     normalized.customModel = isRecord(source.customModel) ? {...source.customModel} : {};
     normalized.customBody = normalizeCustomBodyMapping(source.customBody);
 
+    // `freeTranslation` previously sent the same text through a hidden
+    // Microsoft → DeepLX → Google fallback chain. Its legacy default must not
+    // survive the local-first migration.
+    if (source.service === services.freeTranslation) {
+        normalized.service = services.chromeTranslator;
+    }
+
+    normalized.enableDeepLXExperimental = source.enableDeepLXExperimental === true;
+    if (!normalized.enableDeepLXExperimental && normalized.service === services.deeplx) {
+        normalized.service = services.chromeTranslator;
+    }
+
     if (typeof normalized.videoTranslationEnabled !== 'boolean') {
         normalized.videoTranslationEnabled = false;
     }
     // 早期 Beta 版本曾把 DeepLX 写成默认值。只对没有迁移标记的旧配置
     // 执行一次迁移，避免覆盖用户在新版本中主动选择的 DeepLX。
     const shouldMigrateLegacyVideoDefault = source.videoService === services.deeplx
-        && source.videoServiceDefaultMigrated !== true;
+        && (source.videoServiceDefaultMigrated !== true || !normalized.enableDeepLXExperimental);
     const supportsVideoService = servicesType.machine.has(normalized.videoService)
         || servicesType.isAI(normalized.videoService);
     if (shouldMigrateLegacyVideoDefault || !supportsVideoService) {
-        normalized.videoService = services.microsoft;
+        normalized.videoService = services.chromeTranslator;
     }
     normalized.videoServiceDefaultMigrated = true;
     if (typeof normalized.videoSubtitleVisible !== 'boolean') {

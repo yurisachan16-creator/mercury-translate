@@ -20,9 +20,9 @@
       v-if="showMenu"
       class="floating-ball-tool floating-ball-translate floating-ball-item"
       type="button"
-      :aria-label="isTranslating ? '恢复网页原文' : '翻译整个网页'"
+      :aria-label="isTranslating ? t('popup.restoreCurrentPage') : t('popup.translateCurrentPage')"
       :aria-pressed="isTranslating"
-      :title="isTranslating ? '恢复网页原文' : '翻译整个网页'"
+      :title="isTranslating ? t('popup.restoreCurrentPage') : t('popup.translateCurrentPage')"
       @pointerdown.stop
       @click.stop="toggleTranslation"
     >
@@ -37,8 +37,8 @@
     <div
       class="floating-ball-main floating-ball-item"
       role="img"
-      aria-label="FluentRead"
-      title="按住拖动调整位置"
+      aria-label="Mercury Translate"
+      :title="t('content.dragToReposition')"
       @pointerdown="startDrag"
       @pointerup="finishPointerInteraction"
       @pointercancel="cancelPointerInteraction"
@@ -53,8 +53,8 @@
       v-if="showMenu"
       class="floating-ball-tool floating-ball-settings floating-ball-item"
       type="button"
-      aria-label="打开 FluentRead 设置"
-      title="打开设置"
+      :aria-label="t('content.openSettings')"
+      :title="t('popup.settings')"
       @pointerdown.stop
       @click.stop="handleSettingsClick"
     >
@@ -71,10 +71,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { PropType, CSSProperties } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { config } from '@/entrypoints/utils/config';
 
 const DRAG_THRESHOLD = 6;
 const BALL_SIZE = 42;
+const { t } = useI18n({ useScope: 'global' });
 
 const props = defineProps({
   position: {
@@ -119,7 +121,7 @@ const internalPosition = ref<'left' | 'right' | null>(null);
 const isTranslating = ref(false);
 const floatingBall = ref<HTMLElement | null>(null);
 const showShortcutTooltip = ref(false);
-const shortcutTip = ref('快捷键：Alt+T');
+const shortcutTip = computed(() => t('content.shortcutTip', { hotkey: config.floatingBallHotkey || 'Alt+T' }));
 const dragState = ref<PointerDragState | null>(null);
 const isAnimating = ref(false);
 let animationTimer: ReturnType<typeof setTimeout> | undefined;

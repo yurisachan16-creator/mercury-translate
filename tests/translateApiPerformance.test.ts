@@ -3,6 +3,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 const mocks = vi.hoisted(() => ({
   sendMessage: vi.fn(),
   saveConfig: vi.fn(async () => undefined),
+  requestNetworkProviderConsent: vi.fn(),
   config: {
     count: 0,
     maxConcurrentTranslations: 6,
@@ -25,11 +26,22 @@ vi.mock('@/entrypoints/utils/config', () => ({
 }));
 vi.mock('@/entrypoints/utils/common', () => ({detectlang: () => 'eng'}));
 vi.mock('@/entrypoints/utils/option', () => ({
+  services: {
+    microsoft: 'microsoft',
+    freeTranslation: 'freeTranslation',
+    deeplx: 'deeplx',
+    google: 'google',
+    chromeTranslator: 'chromeTranslator',
+    custom: 'custom',
+  },
   resolveConfiguredModel: (model: string) => model,
   servicesType: {isUseAIContext: () => false},
 }));
 vi.mock('@/entrypoints/utils/pageContext', () => ({getPageTranslationContext: vi.fn()}));
 vi.mock('@/entrypoints/utils/configValidation', () => ({getMissingCredentialMessage: () => null}));
+vi.mock('@/entrypoints/utils/networkConsentUi', () => ({
+  requestNetworkProviderConsent: mocks.requestNetworkProviderConsent,
+}));
 
 import {cancelAllTranslations, translateText} from '@/entrypoints/utils/translateApi';
 import {clearTranslationQueue} from '@/entrypoints/utils/translateQueue';
@@ -48,6 +60,7 @@ describe('translation API request lifecycle performance', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mocks.sendMessage.mockReset();
+    mocks.requestNetworkProviderConsent.mockReset();
     mocks.saveConfig.mockClear();
     mocks.config.count = 0;
     mocks.config.maxConcurrentTranslations = 6;
@@ -57,6 +70,15 @@ describe('translation API request lifecycle performance', () => {
     clearTranslationQueue();
     await vi.runAllTimersAsync();
     vi.useRealTimers();
+  });
+
+  it('does not dispatch text when the request is already cancelled', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(translateText('Readable source', 'Context', {signal: controller.signal}))
+      .rejects.toMatchObject({name: 'AbortError'});
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
   });
 
   it('clears successful request timeouts and coalesces count persistence', async () => {
@@ -96,6 +118,27 @@ describe('translation API request lifecycle performance', () => {
     cancelAllTranslations();
     expect(mocks.saveConfig).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('does not run normal retry policy for a typed network-consent outcome', async () => {
+    mocks.sendMessage.mockResolvedValue({
+      type: 'network-consent-required',
+      reason: 'local-provider-unavailable',
+      providerId: null,
+      privacyBoundary: 'network-free',
+      availableProviders: ['microsoft', 'google'],
+      message: 'Choose a network provider.',
+    });
+    mocks.requestNetworkProviderConsent.mockResolvedValue(null);
+
+    const outcome = translateText('Readable source', 'Context', {maxRetries: 3}).catch((error) => error);
+
+    await expect(outcome).resolves.toMatchObject({
+      name: 'NetworkConsentRequiredError',
+      outcome: {type: 'network-consent-required', reason: 'local-provider-unavailable'},
+    });
+    expect(mocks.sendMessage).toHaveBeenCalledOnce();
+    expect(mocks.requestNetworkProviderConsent).toHaveBeenCalledOnce();
   });
 
   it('aborts the DOM caller immediately but does not release the real transport concurrency slot', async () => {

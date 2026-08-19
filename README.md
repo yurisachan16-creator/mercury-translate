@@ -1,96 +1,72 @@
 <div align="center">
 
-<img src="./public/icon/128.png" alt="FluentRead logo" width="96" />
+<img src="./public/icon/128.png" alt="Mercury Translate logo" width="96" />
 
-# FluentRead
+# Mercury Translate
 
-### Make every webpage feel native to read.
+### 水星翻译 · Local-first bilingual reading for the open web
 
-An open-source browser extension for bilingual webpages, instant selection translation, and flexible translation services.
-
-[![Latest version](https://img.shields.io/badge/version-0.0.30-6d5dfc?style=flat-square)](https://github.com/Bistutu/FluentRead/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-f59e0b?style=flat-square)](../../releases)
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-22a06b?style=flat-square)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Bistutu/FluentRead?style=flat-square)](https://github.com/Bistutu/FluentRead)
-
-<br />
-
-**[Install](#install)** · **[Explore features](#what-you-can-do)** · **[Read the docs](https://fluent.thinkstu.com/)** · **[简体中文](./misc/README_ZH.md)**
+[![Chrome](https://img.shields.io/badge/Chrome-151%2B-4285F4?style=flat-square)](https://www.google.com/chrome/)
 
 </div>
 
-<p align="center">
-  <img src="./misc/screenshots/translation.png" alt="A webpage translated into a clean bilingual layout" width="920" />
-</p>
+Mercury Translate is an open-source browser extension for bilingual webpages,
+selection translation, YouTube subtitles, image OCR, and side-by-side PDF
+reading. It has no Mercury backend, account, subscription, or telemetry.
 
-FluentRead brings translation into the reading flow. Keep the original text beside the translation, translate only the sentence you need, or translate the whole page without opening another tab. Choose a traditional translation engine, an AI provider, or the built-in free fallback, then tune the experience to your reading habits.
+Mercury Translate（水星翻译）是一款本地优先的开源双语阅读扩展，支持网页、划词、
+YouTube 字幕、图片 OCR 和 PDF 原页/译文对照。项目不运营中转服务器，也不需要账号或订阅。
 
-## What you can do
+## Highlights / 主要能力
 
-| Read naturally | Stay in control |
-| --- | --- |
-| **Bilingual pages** — Keep original text and translation together for study, research, and technical reading. | **Many translation services** — Use Microsoft Translator, Google Translate, DeepL, DeepLX, Chrome Translator, or AI providers such as OpenAI, DeepSeek, Gemini, Claude, Kimi, Ollama-compatible endpoints, and more. |
-| **Whole-page translation** — Use the floating ball, context menu, or a customizable shortcut to translate and restore a page in place. | **Custom models and endpoints** — Configure compatible APIs, models, prompts, request bodies, proxies, and credentials from the settings page. |
-| **Selection translation** — Select text and get a focused translation card with copy and speech actions. | **Local-first configuration** — Preferences and translation cache stay in the browser’s local storage. API keys are entered and used locally by the extension. |
-| **Hover and gesture triggers** — Translate with a hover shortcut, double click, long press, middle click, or touch gestures. | **Reader-friendly controls** — Choose translation styles, themes, animation, cache behavior, concurrency, and separate shortcuts for page and selection translation. |
+- **Webpages** — incremental bilingual translation for dynamic pages and open Shadow DOM.
+- **Selection and images** — translate selected text, screenshots, and image text.
+- **YouTube** — bilingual captions with independent provider selection.
+- **PDF** — Chrome 151+ PDF handler with the original page on the left and translated blocks on the right.
+- **Local first** — Chrome Translator is the default. Network providers are never selected as an implicit fallback.
+- **Bring your own key** — OpenAI/GPT, DeepSeek, Gemini, OpenAI-compatible endpoints, and local Ollama remain available.
+- **International UI** — English, Simplified Chinese, and Traditional Chinese; OCR packs cover English, Simplified/Traditional Chinese, Japanese, and Korean.
 
-### Also included
+Google and Microsoft/Bing are network services. If the local Chrome model cannot
+handle a language pair, Mercury Translate asks before sending text to one of
+them. See the [privacy policy](./docs/guide/privacy-policy.md) for the exact data
+boundaries.
 
-- **Free Translation**: a built-in fallback chain that tries Microsoft first, then DeepLX, then Google when a service returns an error or empty result.
-- **Image translation (Beta)**: local OCR for text in images, with downloadable language packs and a reversible translated overlay.
-- **Translation cache**: reuse recent results for the same service, model, language pair, and request settings.
-- **Cross-browser support**: build targets for Chromium browsers and Firefox through WXT and Manifest V3.
+## Install from GitHub / 从 GitHub 安装
 
-## See it in action
+1. Download the Chrome ZIP from [GitHub Releases](../../releases).
+2. Extract it to a stable directory.
+3. Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**,
+   and select the extracted directory.
+4. Future release ZIPs use the same public extension key so replacing the files
+   and reloading preserves the extension ID and local settings.
 
-### A small popup for everyday reading
-
-The popup keeps the most-used controls close: enable or pause the extension, choose languages and a default service, open the full settings page, and clear the local translation cache.
-
-<p align="center">
-  <img src="./misc/screenshots/popup.png" alt="FluentRead popup with language and translation controls" width="400" />
-</p>
-
-### Settings that scale with your workflow
-
-Use focused settings pages for reading preferences, services and models, shortcuts, image translation, advanced behavior, and configuration backup.
-
-<p align="center">
-  <img src="./misc/screenshots/settings-general.png" alt="FluentRead general settings page" width="920" />
-</p>
-
-<p align="center">
-  <img src="./misc/screenshots/settings-services.png" alt="FluentRead translation service catalog" width="920" />
-</p>
-
-## Install
-
-| Browser | Store |
-| --- | --- |
-| Chrome | [Chrome Web Store](https://chromewebstore.google.com/detail/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/djnlaiohfaaifbibleebjggkghlmcpcj?hl=en) · [CrxSoso mirror](https://www.crxsoso.com/webstore/detail/djnlaiohfaaifbibleebjggkghlmcpcj) |
-| Edge | [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/kakgmllfpjldjhcnkghpplmlbnmcoflp) |
-| Firefox | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/) |
-
-For a local build, install dependencies with pnpm and load the generated `./.output/chrome-mv3` directory as an unpacked extension. See the [official documentation](https://fluent.thinkstu.com/) for setup and configuration details.
-
-## Documentation and community
-
-- [Official documentation](https://fluent.thinkstu.com/) — features, setup, services, shortcuts, and FAQ.
-- [GitHub Discussions and Issues](https://github.com/Bistutu/FluentRead/issues) — report a problem or suggest an improvement.
-- [Bilibili introduction](https://www.bilibili.com/video/BV1ux4y1e73x/)
-- [DeepWiki architecture overview](https://deepwiki.com/Bistutu/FluentRead)
+The first use of an OCR language may download a version-pinned, checksummed
+language model. Recognition happens locally after that download. Chrome may also
+download its own Translator model for a new language pair.
 
 ## Development
 
 ```bash
-pnpm install
-pnpm dev
-pnpm test
+pnpm install --frozen-lockfile
 pnpm compile
+pnpm test
 pnpm build
+pnpm zip
 ```
 
-FluentRead uses Vue 3, TypeScript, Element Plus, WXT, and Manifest V3. The project is licensed under [GPL-3.0](./LICENSE).
+The unpacked Chrome build is written to `.output/chrome-mv3`. The project uses
+WXT 0.20, Vue 3, TypeScript, PDF.js, Tesseract.js, and Manifest V3.
 
-## Star history
+## Upstream and license
 
-[![Star History Chart](https://star-history.dera.page/svg?repos=Bistutu/FluentRead&type=Date)](https://star-history.dera.page/#Bistutu/FluentRead&Date)
+Mercury Translate is an independent, unofficial fork of
+[FluentRead](https://github.com/FluentRead/FluentRead), initially based on commit
+[`f91543c`](https://github.com/FluentRead/FluentRead/commit/f91543c6b6b76f3c5d6343b47a82e431acfa648a).
+It is not endorsed by or affiliated with the FluentRead maintainers.
+
+The combined work is distributed under [GPL-3.0](./LICENSE). PDF.js is
+Apache-2.0, and the packaged Tesseract.js components retain their respective
+Apache-2.0/MIT notices. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

@@ -1,54 +1,52 @@
 # 翻译服务
 
-FluentRead 不把翻译能力锁定在单一供应商上。你可以在设置页启用多个服务，并根据质量、速度、成本和隐私要求选择当前使用的引擎。
+Mercury Translate 把服务按隐私边界分为三类：本地、免费联网服务和自带密钥服务。切换到会联网的服务前，扩展会先取得你的明确同意，不会在本地服务不可用时静默把文本发给第三方。
 
-<img class="doc-screenshot" src="/screenshots/settings-services.png" alt="FluentRead translation service settings" />
+<img class="doc-screenshot" src="/screenshots/settings-services.png" alt="Mercury Translate translation service settings" />
 
 ## 如何选择
 
 | 你的优先级 | 建议先尝试 |
 | --- | --- |
-| 想快速体验 | 免费翻译服务 |
-| 想要稳定的通用翻译 | Microsoft、Google 或 DeepL |
-| 想让译文更关注上下文 | OpenAI 兼容 API 或其他 AI 服务 |
-| 不希望文本离开本机 | Ollama 本地模型 |
+| 不希望文本离开本机 | Chrome 本地 Translator API，或你自己运行的 Ollama |
+| 快速试用联网翻译 | Microsoft/Bing 或 Google 免费联网服务 |
+| 需要自己的额度、质量或模型 | DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自定义端点 |
+| 调试实验服务 | 高级实验选项中的 DeepLX |
 
-公共免费服务可能受到流量、区域、频率和维护状态影响；它适合入门和临时使用，不适合作为关键工作流的唯一依赖。
+Chrome 本地 Translator API 是默认服务。启动时 Mercury Translate 会检测当前语言组合和模型状态；如果浏览器不支持、模型未下载或语言组合不可用，界面会显示对应状态。
 
-## 通用配置流程
+## 免费联网服务
 
-1. 打开设置页的“翻译服务”。
-2. 启用目标服务，填写服务要求的地址、密钥或模型名称。
-3. 保存后可以点击“检查连接”发送一条很短的真实请求；这可能产生少量用量。
-4. 确认结果、耗时和额度都符合预期，再处理长页面。
+Microsoft/Bing 和 Google 被归类为免费联网服务。它们不需要你填写 API Key，但文本会发送到对应服务商，且稳定性、频率限制和接口行为不保证长期可用。
 
-## 云端服务
+首次需要从本地服务切换到联网服务时，Mercury Translate 会要求你选择：
 
-Microsoft、Google、DeepL 以及其他云端服务通常需要 API 密钥或账号配额。请从服务商的官方控制台获取凭据，并确认：
+- 仅本次使用指定联网服务；
+- 将该服务设为默认服务；
+- 取消，不发送任何文本。
 
-- API 地址与区域、版本或项目设置匹配；
-- 密钥只拥有必要权限，并设置合理的额度限制；
-- 服务商是否会保存请求内容；
-- 你的文本是否包含不应上传的个人或机密信息。
+网络失败、429 或服务商返回异常时，Mercury Translate 会保留当前页已有结果并让你重试或手动换服务，不会在不同隐私等级之间自动切换。
 
-云服务的价格、免费额度和接口要求可能变化，使用前应以服务商当前文档为准。
+## 自带密钥服务
 
-## AI 服务与 OpenAI 兼容接口
-
-AI 翻译更适合需要上下文、术语一致性或风格控制的内容。配置时通常需要填写：
+DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自定义端点和其他 AI 服务适合需要上下文、术语一致性或风格控制的内容。配置时通常需要填写：
 
 - API Base URL；
 - API Key；
 - Model 名称；
 - 目标语言和可选的高级参数。
 
-不同供应商对兼容接口的实现并不完全相同。如果请求失败，先用服务商官方示例验证地址、模型和密钥，再回到 FluentRead 检查配置。
+API Key 只保存在浏览器本地存储中，不参与同步，也不会写入日志。保存服务配置时，Mercury Translate 才会申请对应域名权限。
 
-首次配置 AI 服务时，FluentRead 会按服务选择近期的推荐档位：除 OpenAI 兼容服务默认使用 GPT-5.6 Luna 外，其他服务优先采用成本友好的小型档位（例如 mini、flash、haiku 或 lite）；你仍可以在“模型列表”中手动切换模型。
+不同供应商对兼容接口的实现并不完全相同。如果请求失败，先用服务商官方示例验证地址、模型和密钥，再回到 Mercury Translate 检查配置。
+
+## DeepLX
+
+DeepLX 是高级实验选项，默认关闭。它通常依赖非官方接口或自建网关，稳定性、可用性和合规边界取决于你的部署方式。只有在你理解其风险并主动启用后才建议使用。
 
 ## MiniMax
 
-MiniMax 同时提供按量付费 API 和 Token Plan 两类权益。两类 Key 不能互换；Token Plan Key 通常以 `sk-cp-` 开头，并且要求对应订阅仍然有效。在 MiniMax 服务配置中分别选择“按量付费（API）”或“Token Plan（套餐/积分）”，再选择 Key 所属的“中国版”或“全球版”（默认中国版）。FluentRead 会根据区域使用对应的 OpenAI 兼容 Chat Completions 地址，并在页面显示当前地址。
+MiniMax 同时提供按量付费 API 和 Token Plan 两类权益。两类 Key 不能互换；Token Plan Key 通常以 `sk-cp-` 开头，并且要求对应订阅仍然有效。在 MiniMax 服务配置中分别选择“按量付费（API）”或“Token Plan（套餐/积分）”，再选择 Key 所属的“中国版”或“全球版”（默认中国版）。Mercury Translate 会根据区域使用对应的 OpenAI 兼容 Chat Completions 地址，并在页面显示当前地址。
 
 如果看到 `401` 或错误码 `2049`，优先检查计费方式、区域和 Key 是否来自同一套 MiniMax 账户权益；不要把截图或完整 Key 发到 Issue、聊天记录或仓库。
 

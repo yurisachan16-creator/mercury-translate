@@ -47,8 +47,8 @@ afterEach(() => {
 });
 
 describe("DeepLX endpoint configuration", () => {
-    it("uses the verified public endpoint when no URL is configured", () => {
-        expect(getDeepLXEndpoints("", "")).toEqual([DEFAULT_DEEPLX_ENDPOINT]);
+    it("does not choose a public endpoint when no URL is configured", () => {
+        expect(getDeepLXEndpoints("", "")).toEqual([]);
     });
 
     it("parses comma- and newline-separated URLs and gives proxy URLs priority", () => {
@@ -62,12 +62,18 @@ describe("DeepLX endpoint configuration", () => {
         expect(getDeepLXEndpoints(DEEPLX_ENDPOINT_PRESETS[1].url, "", "site-token"))
             .toEqual(["https://freeapi.fanyimao.cn/translate?token=site-token"]);
         expect(getDeepLXEndpoints(DEEPLX_ENDPOINT_PRESETS[2].url, "", ""))
-            .toEqual([DEFAULT_DEEPLX_ENDPOINT]);
+            .toEqual([]);
     });
 });
 
 describe("DeepLX adapter", () => {
+    it("does not send a request until the user configures an endpoint", async () => {
+        await expect(deeplx({origin: "Hello"})).rejects.toThrow("DeepLX 所有备用站点均失败");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("sends the expected request and parses a successful response", async () => {
+        mockConfig.deeplx = DEFAULT_DEEPLX_ENDPOINT;
         fetchMock.mockResolvedValue(mockResponse({code: 200, data: "你好"}));
 
         await expect(deeplx({origin: "Hello"})).resolves.toBe("你好");
@@ -111,6 +117,7 @@ describe("DeepLX adapter", () => {
     });
 
     it("adds an optional bearer token without exposing it in the URL", async () => {
+        mockConfig.deeplx = DEFAULT_DEEPLX_ENDPOINT;
         mockConfig.token = {deeplx: "test-token"};
         fetchMock.mockResolvedValue(mockResponse({code: 200, data: "你好"}));
 

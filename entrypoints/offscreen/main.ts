@@ -3,8 +3,9 @@
  * 在 offscreen 环境中处理 Chrome Translation API 调用
  */
 
-import { downloadImageOcrLanguages, recognizeImage } from './imageOcr';
+import { clearImageOcrLanguages, downloadImageOcrLanguages, recognizeImage } from './imageOcr';
 import { translateAreaInOffscreen, translateImageInOffscreen } from './imageTranslation';
+import {getChromeTranslatorLanguageCode} from '@/entrypoints/utils/languageRegistry';
 
 // 语言代码映射
 const languageMap: { [key: string]: string } = {
@@ -51,6 +52,40 @@ function isChromeTranslationSupported(): boolean {
     return false;
 }
 
+type ChromeTranslatorAvailability = 'ready' | 'downloadable' | 'downloading' | 'unsupported' | 'after-detection';
+
+function normalizeTranslatorAvailability(value: unknown): ChromeTranslatorAvailability {
+    if (value === 'available' || value === 'readily' || value === true) return 'ready';
+    if (value === 'downloadable' || value === 'after-download') return 'downloadable';
+    if (value === 'downloading') return 'downloading';
+    return 'unsupported';
+}
+
+async function checkChromeTranslationAvailability(from: string, to: string): Promise<ChromeTranslatorAvailability> {
+    if (!isChromeTranslationSupported()) return 'unsupported';
+    if (from === 'auto') return 'after-detection';
+
+    const sourceLanguage = languageMap[from] || getChromeTranslatorLanguageCode(from);
+    const targetLanguage = languageMap[to] || getChromeTranslatorLanguageCode(to);
+    if (sourceLanguage === targetLanguage) return 'ready';
+
+    try {
+        const translatorApi = (self as any).Translator;
+        if (typeof translatorApi?.availability === 'function') {
+            return normalizeTranslatorAvailability(await translatorApi.availability({sourceLanguage, targetLanguage}));
+        }
+        const legacyTranslationApi = (self as any).translation;
+        if (typeof legacyTranslationApi?.canTranslate === 'function') {
+            return normalizeTranslatorAvailability(await legacyTranslationApi.canTranslate({sourceLanguage, targetLanguage}));
+        }
+        // A supported implementation without an availability probe is checked
+        // lazily by createTranslator/Translator.create during the first request.
+        return 'after-detection';
+    } catch {
+        return 'unsupported';
+    }
+}
+
 // 检测文本语言
 async function detectLanguage(text: string): Promise<string> {
     try {
@@ -72,7 +107,7 @@ async function detectLanguage(text: string): Promise<string> {
             return detected;
         }
     } catch (error) {
-        console.warn('Language detection failed:', error);
+        console.warn('Language detection failed');
     }
     
     // 回退到简单检测
@@ -93,8 +128,6 @@ async function detectLanguage(text: string): Promise<string> {
 
 // 执行翻译
 async function performTranslation(text: string, fromLang: string, toLang: string): Promise<string> {
-    console.log('开始翻译:', { text: text.substring(0, 50) + '...', fromLang, toLang });
-    
     try {
         let translator;
         
@@ -133,11 +166,10 @@ async function performTranslation(text: string, fromLang: string, toLang: string
             throw new Error('翻译器不支持翻译方法');
         }
 
-        console.log('翻译完成:', translatedText.substring(0, 50) + '...');
         return translatedText;
         
     } catch (error) {
-        console.error('翻译执行失败:', error);
+        console.error('翻译执行失败');
         throw error;
     }
 }
@@ -168,8 +200,8 @@ async function handleTranslationRequest(data: any): Promise<string> {
         }
         
         // 映射语言代码 - 确保使用 Chrome API 支持的格式
-        fromLang = languageMap[detectedLang] || detectedLang;
-        toLang = languageMap[to] || to;
+        fromLang = languageMap[detectedLang] || getChromeTranslatorLanguageCode(detectedLang);
+        toLang = languageMap[to] || getChromeTranslatorLanguageCode(to);
 
         console.log('语言映射:', { 
             original: { from, to }, 
@@ -187,16 +219,7 @@ async function handleTranslationRequest(data: any): Promise<string> {
         return await performTranslation(text, fromLang, toLang);
 
     } catch (error) {
-        console.error('Chrome Translation API error:', error);
-        console.error('错误详情:', {
-            error: error,
-            message: error instanceof Error ? error.message : '未知错误',
-            from: from,
-            to: to,
-            detectedLang: detectedLang,
-            fromLang: fromLang,
-            toLang: toLang
-        });
+        console.error('Chrome Translation API error');
         
         // 提供更友好的错误信息
         if (error instanceof Error) {
@@ -215,27 +238,34 @@ async function handleTranslationRequest(data: any): Promise<string> {
 
 // 监听来自 background script 的消息
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    // console.log('Offscreen 收到消息:', message);
-    
     if (message.type === 'CHROME_TRANSLATE_OFFSCREEN') {
         handleTranslationRequest(message.data)
             .then(result => {
-                // console.log('Offscreen 翻译成功:', result.substring(0, 50) + '...');
                 sendResponse({ success: true, result });
             })
             .catch(error => {
-                console.error('Offscreen 翻译失败:', error);
+                console.error('Offscreen 翻译失败');
                 sendResponse({ success: false, error: error.message });
             });
         
         return true; // 保持消息通道开放以支持异步响应
     }
 
+    if (message.type === 'MERCURY_CHROME_TRANSLATOR_AVAILABILITY_OFFSCREEN') {
+        checkChromeTranslationAvailability(message.from, message.to)
+            .then(availability => sendResponse({success: true, availability}))
+            .catch(error => sendResponse({
+                success: false,
+                error: error instanceof Error ? error.message : String(error),
+            }));
+        return true;
+    }
+
     if (message.type === 'FLUENT_READ_IMAGE_OCR_OFFSCREEN') {
         recognizeImage(message.image, message.sourceLanguage)
             .then(lines => sendResponse({ success: true, lines }))
             .catch(error => {
-                console.error('图片 OCR 失败:', error);
+                console.error('图片 OCR 失败');
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : String(error),
@@ -246,10 +276,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 
     if (message.type === 'FLUENT_READ_IMAGE_TRANSLATE_OFFSCREEN') {
-        translateImageInOffscreen(message.image, message.sourceLanguage, message.title || '')
-            .then(result => sendResponse({ success: true, ...result }))
+        translateImageInOffscreen(message.image, message.sourceLanguage, message.title || '', {
+            serviceOverride: typeof message.serviceOverride === 'string' ? message.serviceOverride : undefined,
+            consentScopeId: typeof message.consentScopeId === 'string' ? message.consentScopeId : undefined,
+        })
+            .then(result => {
+                if (result && typeof result === 'object' && 'type' in result && result.type === 'network-consent-required') {
+                    sendResponse(result);
+                    return;
+                }
+                sendResponse({ success: true, ...result });
+            })
             .catch(error => {
-                console.error('图片翻译失败:', error);
+                console.error('图片翻译失败');
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : String(error),
@@ -260,10 +299,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 
     if (message.type === 'FLUENT_READ_AREA_TRANSLATE_OFFSCREEN') {
-        translateAreaInOffscreen(message.image, message.sourceLanguage, message.title || '', message.selection)
-            .then(result => sendResponse({ success: true, ...result }))
+        translateAreaInOffscreen(message.image, message.sourceLanguage, message.title || '', message.selection, {
+            serviceOverride: typeof message.serviceOverride === 'string' ? message.serviceOverride : undefined,
+            consentScopeId: typeof message.consentScopeId === 'string' ? message.consentScopeId : undefined,
+        })
+            .then(result => {
+                if (result && typeof result === 'object' && 'type' in result && result.type === 'network-consent-required') {
+                    sendResponse(result);
+                    return;
+                }
+                sendResponse({ success: true, ...result });
+            })
             .catch(error => {
-                console.error('圈选翻译失败:', error);
+                console.error('圈选翻译失败');
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : String(error),
@@ -277,7 +325,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         downloadImageOcrLanguages(message.languages || [])
             .then(() => sendResponse({ success: true }))
             .catch(error => {
-                console.error('图片 OCR 语言包下载失败:', error);
+                console.error('图片 OCR 语言包下载失败');
+                sendResponse({
+                    success: false,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            });
+
+        return true;
+    }
+
+    if (message.type === 'MERCURY_IMAGE_OCR_CLEAR_OFFSCREEN') {
+        clearImageOcrLanguages()
+            .then(() => sendResponse({ success: true }))
+            .catch(error => {
+                console.error('OCR 语言包清除失败');
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : String(error),

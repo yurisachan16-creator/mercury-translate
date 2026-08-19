@@ -1,47 +1,48 @@
 <template>
   <div v-show="showIndicator || showTooltip || copySuccess" class="fr-selection-translator-root" @pointerdown.stop>
-    <button v-if="showIndicator && !showTooltip" class="fr-selection-indicator" :class="`fr-selection-indicator--${triggerMode}`" :style="indicatorStyle" type="button" aria-label="打开划词翻译" title="打开划词翻译" @pointerdown.prevent.stop @click="openTooltip">
+    <button v-if="showIndicator && !showTooltip" class="fr-selection-indicator" :class="`fr-selection-indicator--${triggerMode}`" :style="indicatorStyle" type="button" :aria-label="t('content.selectionOpen')" :title="t('content.selectionOpen')" @pointerdown.prevent.stop @click="openTooltip">
       <span class="fr-selection-indicator-glyph" aria-hidden="true">↗</span>
     </button>
 
-    <section v-if="showTooltip" ref="tooltip-ref" class="fr-translation-tooltip" :class="{ 'fr-dark-theme': isDarkTheme }" :data-placement="popupPlacement" :style="tooltipStyle" role="dialog" aria-label="划词翻译结果" @pointerdown.prevent.stop>
+    <section v-if="showTooltip" ref="tooltip-ref" class="fr-translation-tooltip" :class="{ 'fr-dark-theme': isDarkTheme }" :data-placement="popupPlacement" :style="tooltipStyle" role="dialog" :aria-label="t('content.selectionDialog')" @pointerdown.prevent.stop>
       <header class="fr-tooltip-header">
-        <div class="fr-tooltip-title"><span>翻译结果</span><small>via FluentRead</small></div>
+        <div class="fr-tooltip-title"><span>{{ t('content.selectionResult') }}</span><small>via Mercury Translate</small></div>
         <div class="fr-tooltip-actions">
-          <button class="fr-action-btn" type="button" title="复制译文" aria-label="复制译文" @click="copyTranslation"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg></button>
-          <button class="fr-close-btn" type="button" title="关闭" aria-label="关闭翻译结果" @click="closeTooltip">×</button>
+          <button class="fr-action-btn" type="button" :title="t('content.copyTranslation')" :aria-label="t('content.copyTranslation')" @click="copyTranslation"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg></button>
+          <button class="fr-close-btn" type="button" :title="t('content.close')" :aria-label="t('content.closeTranslationResult')" @click="closeTooltip">×</button>
         </div>
       </header>
 
       <div class="fr-tooltip-content" aria-live="polite">
-        <div v-if="isLoading" class="fr-loading-state"><span :class="['fr-loading-spinner', { 'fr-static': !config.animations }]" aria-hidden="true" /><span>正在翻译…</span></div>
-        <div v-else-if="error" class="fr-error-state"><span>{{ error }}</span><button type="button" @click="retryTranslation">重试</button></div>
+        <div v-if="isLoading" class="fr-loading-state"><span :class="['fr-loading-spinner', { 'fr-static': !config.animations }]" aria-hidden="true" /><span>{{ t('content.translating') }}</span></div>
+        <div v-else-if="error" class="fr-error-state"><span>{{ error }}</span><button type="button" @click="retryTranslation">{{ t('content.retry') }}</button></div>
         <div v-else class="fr-translation-container">
           <div v-if="config.selectionTranslatorMode === 'bilingual'" class="fr-text-block fr-original-text">
-            <div class="fr-text-label">原文</div><pre>{{ selectedText }}</pre>
+            <div class="fr-text-label">{{ t('content.original') }}</div><pre>{{ selectedText }}</pre>
             <button class="fr-text-audio-btn" type="button" :aria-label="audioLabel('source')" :title="audioLabel('source')" @click="toggleAudio(selectedText, 'source')">
               <svg v-if="isCurrentAudio('source')" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12" /></svg>
               <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" /><path d="M16 9.5a4.5 4.5 0 0 1 0 5M18.5 7a8 8 0 0 1 0 10" /></svg>
             </button>
           </div>
           <div v-if="config.selectionTranslatorMode === 'bilingual' || config.selectionTranslatorMode === 'translation-only'" class="fr-text-block fr-translation-result">
-            <div class="fr-text-label">译文</div><pre>{{ translationResult }}</pre>
+            <div class="fr-text-label">{{ t('content.translation') }}</div><pre>{{ translationResult }}</pre>
             <button class="fr-text-audio-btn" type="button" :aria-label="audioLabel('translation')" :title="audioLabel('translation')" @click="toggleAudio(translationResult, 'translation')">
               <svg v-if="isCurrentAudio('translation')" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12" /></svg>
               <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" /><path d="M16 9.5a4.5 4.5 0 0 1 0 5M18.5 7a8 8 0 0 1 0 10" /></svg>
             </button>
           </div>
-          <div v-if="isPlaying" class="fr-playing-status"><span>正在播放{{ currentAudioKind === 'source' ? '原文' : '译文' }}</span><button type="button" aria-label="停止播放" title="停止播放" @click="stopAudio">停止</button></div>
+          <div v-if="isPlaying" class="fr-playing-status"><span>{{ t('content.playing', { kind: currentAudioKind === 'source' ? t('content.original') : t('content.translation') }) }}</span><button type="button" :aria-label="t('content.stopPlayback')" :title="t('content.stopPlayback')" @click="stopAudio">{{ t('content.stop') }}</button></div>
         </div>
       </div>
     </section>
 
-    <div v-if="copySuccess" class="fr-copy-success-toast" :class="{ 'fr-dark-theme': isDarkTheme }" role="status">已复制译文</div>
+    <div v-if="copySuccess" class="fr-copy-success-toast" :class="{ 'fr-dark-theme': isDarkTheme }" role="status">{{ t('content.copiedTranslation') }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import browser from 'webextension-polyfill';
 import { config } from '@/entrypoints/utils/config';
 import { translateText } from '@/entrypoints/utils/translateApi';
@@ -51,6 +52,8 @@ import { calculateSelectionPopupPosition, chooseSelectionRect, isSameLanguage, n
 type SelectionTrigger = 'direct' | 'icon' | 'dot';
 type AudioKind = 'source' | 'translation';
 interface SelectionSnapshot { text: string; range: Range; anchor: SelectionRect; isForward: boolean; }
+
+const { t } = useI18n({ useScope: 'global' });
 
 const tooltipRef = useTemplateRef<HTMLElement>('tooltip-ref');
 const selectedText = ref('');
@@ -190,7 +193,7 @@ async function requestTranslation(text: string): Promise<void> {
   } catch (cause) {
     if (requestId !== translationRequestId || snapshot.value?.text !== text) return;
     console.error('Selection translation error:', cause);
-    error.value = '翻译失败，请重试';
+    error.value = t('content.translationFailed');
   } finally {
     if (requestId === translationRequestId) isLoading.value = false;
   }
@@ -230,7 +233,10 @@ function selectVoice(language: string): SpeechSynthesisVoice | undefined {
 }
 
 function isCurrentAudio(kind: AudioKind): boolean { return isPlaying.value && currentAudioKind.value === kind; }
-function audioLabel(kind: AudioKind): string { return isCurrentAudio(kind) ? `停止播放${kind === 'source' ? '原文' : '译文'}` : `播放${kind === 'source' ? '原文' : '译文'}`; }
+function audioLabel(kind: AudioKind): string {
+  if (isCurrentAudio(kind)) return kind === 'source' ? t('content.stopOriginal') : t('content.stopTranslation');
+  return kind === 'source' ? t('content.playOriginal') : t('content.playTranslation');
+}
 
 function stopAudio(): void {
   audioRequestId += 1;
@@ -240,37 +246,6 @@ function stopAudio(): void {
   isPlaying.value = false;
   currentAudioKind.value = null;
   currentAudioText.value = '';
-}
-
-function base64ToBlobUrl(audioBase64: string, contentType: string): string {
-  const binary = atob(audioBase64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
-  return URL.createObjectURL(new Blob([bytes], { type: contentType }));
-}
-
-async function playEdgeSpeech(text: string, language: string, kind: AudioKind, requestId: number): Promise<boolean> {
-  try {
-    const response = await browser.runtime.sendMessage({ type: 'selectionTts', text, language }) as {
-      success?: boolean;
-      audioBase64?: string;
-      contentType?: string;
-    };
-    if (requestId !== audioRequestId || !response?.success || !response.audioBase64) return requestId === audioRequestId ? false : true;
-    const audioUrl = base64ToBlobUrl(response.audioBase64, response.contentType || 'audio/mpeg');
-    const nextAudio = new Audio(audioUrl);
-    nextAudio.onended = () => { if (audio === nextAudio) stopAudio(); URL.revokeObjectURL(audioUrl); };
-    nextAudio.onerror = () => { if (audio === nextAudio) stopAudio(); URL.revokeObjectURL(audioUrl); };
-    audio = nextAudio;
-    currentAudioKind.value = kind;
-    currentAudioText.value = text;
-    isPlaying.value = true;
-    await nextAudio.play();
-    return true;
-  } catch (cause) {
-    if (requestId === audioRequestId) console.warn('Edge TTS unavailable, trying browser speech:', cause);
-    return requestId !== audioRequestId;
-  }
 }
 
 function playBrowserSpeech(text: string, language: string, kind: AudioKind): boolean {
@@ -291,18 +266,6 @@ function playBrowserSpeech(text: string, language: string, kind: AudioKind): boo
   } catch (cause) { console.warn('Browser speech synthesis unavailable:', cause); return false; }
 }
 
-function playGoogleFallback(text: string, language: string, kind: AudioKind): void {
-  const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(language)}&client=tw-ob&q=${encodeURIComponent(text)}`;
-  const nextAudio = new Audio(speechUrl);
-  nextAudio.onended = stopAudio;
-  nextAudio.onerror = () => { console.warn('Fallback speech audio failed'); stopAudio(); };
-  audio = nextAudio;
-  currentAudioKind.value = kind;
-  currentAudioText.value = text;
-  isPlaying.value = true;
-  void nextAudio.play().catch(() => stopAudio());
-}
-
 async function toggleAudio(text: string, kind: AudioKind): Promise<void> {
   const cleanText = text.trim();
   if (!cleanText) return;
@@ -310,12 +273,12 @@ async function toggleAudio(text: string, kind: AudioKind): Promise<void> {
   stopAudio();
   const language = speechLanguage(cleanText, kind);
   const requestId = audioRequestId;
-  isPlaying.value = true;
-  currentAudioKind.value = kind;
-  currentAudioText.value = cleanText;
-  const edgeStarted = await playEdgeSpeech(cleanText, language, kind, requestId);
-  if (edgeStarted || requestId !== audioRequestId) return;
-  if (!playBrowserSpeech(cleanText, language, kind)) playGoogleFallback(cleanText, language, kind);
+  if (requestId !== audioRequestId) return;
+  if (!playBrowserSpeech(cleanText, language, kind)) {
+    isPlaying.value = false;
+    currentAudioKind.value = null;
+    currentAudioText.value = '';
+  }
 }
 
 function closeTooltip(): void { hideAll(); }

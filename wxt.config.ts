@@ -72,27 +72,27 @@ export default defineConfig({
         plugins: [vue(), escapeExtensionNoncharacters()],
         define: {
             'process.env.VUE_APP_VERSION': JSON.stringify(packageJson.version),
+            'process.env.MERCURY_OCR_BASE_URL': JSON.stringify(process.env.MERCURY_OCR_BASE_URL || ''),
         }
     }),
     manifest: {
+        name: '__MSG_extensionName__',
+        short_name: '__MSG_extensionShortName__',
+        description: '__MSG_extensionDescription__',
+        default_locale: 'en',
+        minimum_chrome_version: '151',
+        // The public half of the project key keeps the extension ID stable for
+        // users updating GitHub Release builds. No signing secret is bundled.
+        key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyhbl80xN1FSvgW53b6Q0lYB6t/uobOZmfhW/Wm/jE9kLdG28Mel0VeGNToaV0c6RHuSApkfd5SdnQpteAH4/QcWv1p45Cxdtr2eNzfATFdRoBa10VfPtbMBCIQZDzSuwfEUNHLV94ITWyuHroxSav3QqlzWkPkO+X5wWWDdyzMxFton3NL//ekRLhdDh1CKcQv6T04KNsQjrb3jXdBBjapqJBl20BowWWxKHt6D4Fx7dajWg5bpgJAD5s9dNR5E73MaunP5A5WNnhCxHAoqPfTw3AoOLW73Q9v+cObTySRvtskVK56y/Bj2DM81bJrzezxRnzD3P+YPg/XA2Pt1FOwIDAQAB',
         permissions: ['storage', 'alarms', 'contextMenus', 'offscreen'],
         content_security_policy: {
             extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
         },
-        host_permissions: [
-            'https://translate.google.com/*',
-            'https://translate.google.co.uk/*',
-            'https://translate.googleapis.com/*',
-            'https://dev.microsofttranslator.com/*',
-            'https://*.tts.speech.microsoft.com/*',
-            'https://deeplx.1stg.me/*',
-            'https://freeapi.fanyimao.cn/*',
-            'https://api.deeplx.org/*',
-            'http://localhost/*',
-            'http://127.0.0.1/*',
-            'http://*/*',
-            'https://*/*',
-        ],
+        // Page access comes from the declared content-script match patterns.
+        // Provider/OCR/image origins are requested from a user gesture only
+        // when that service or asset is selected.
+        host_permissions: [],
+        optional_host_permissions: ['http://*/*', 'https://*/*'],
         web_accessible_resources: [
             {
                 resources: ['icon/32.png', 'icon/48.png', 'icon/128.png'],
@@ -100,6 +100,14 @@ export default defineConfig({
                 use_dynamic_url: true,
             },
         ],
-    },
+        // Chrome 151+ routes PDF responses to the extension while preserving
+        // the original URL and one-shot response stream.
+        mime_types_handler: {
+            'application/pdf': {
+                handler_url: 'pdf-viewer.html',
+                can_embed: true,
+            },
+        },
+    } as any,
 
 });

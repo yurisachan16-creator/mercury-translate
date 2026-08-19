@@ -1,4 +1,5 @@
-import {DEFAULT_DEEPLX_ENDPOINT} from "./deeplx";
+import { getSourceLanguageOptions, getTranslationTargetOptions } from "./languageRegistry";
+import type { MessagePath } from '../i18n/messages';
 
 export const services = {
     // 机器翻译
@@ -311,7 +312,7 @@ export const options = {
         {value: true, label: "开启"},
         {value: false, label: "关闭"},
     ],
-    form: [{value: "auto", label: "自动检测"}],
+    form: getSourceLanguageOptions(),
     // DeepSeek API 格式（仅 DeepSeek 服务显示）
     deepseekApiType: [
         {value: "auto", label: "自动（Chat Completion）"},
@@ -322,14 +323,7 @@ export const options = {
         {value: "disabled", label: "关闭（推荐）"},
         {value: "enabled", label: "开启"},
     ],
-    to: [
-        {value: "zh-Hans", label: "中文"},
-        {value: "en", label: "英语"},
-        {value: "ja", label: "日语"},
-        {value: "ko", label: "韩语"},
-        {value: "fr", label: "法语"},
-        {value: "ru", label: "俄语"},
-    ],
+    to: getTranslationTargetOptions(['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko', 'fr', 'ru']),
     keys: [
         {value: "none", label: "禁用快捷键"},
 
@@ -358,18 +352,30 @@ export const options = {
         // 机器翻译
         {value: "machine", label: "机器翻译", disabled: true},
         {
-            value: services.freeTranslation,
-            label: "免费翻译服务",
-            description: "免费提供，按微软翻译、DeepLX、谷歌翻译依次尝试；翻译质量和可用性不作保证。",
+            value: services.chromeTranslator,
+            label: "Chrome 本地翻译",
+            description: "在设备上使用 Chrome 内置翻译模型。语言组合可用性由浏览器运行时决定。",
         },
-        {value: services.microsoft, label: "微软翻译"},
-        {value: services.google, label: "谷歌翻译"},
+        {
+            value: services.microsoft,
+            label: "微软翻译（联网）",
+            description: "免费联网服务：待翻译文本会发送给微软。该非合约集成不保证稳定性。",
+        },
+        {
+            value: services.google,
+            label: "谷歌翻译（联网）",
+            description: "免费联网服务：待翻译文本会发送给谷歌。该非合约集成不保证稳定性。",
+        },
+        {
+            value: services.deeplx,
+            label: "DeepLX（实验）",
+            description: "实验性联网服务，仅在高级选项中主动启用后显示。",
+            experimental: true,
+        },
         {value: services.deepL, label: "DeepL"},
-        {value: services.deeplx, label: "DeepLX（免费非官方）"},
         {value: services.xiaoniu, label: "小牛翻译"},
         {value: services.youdao, label: "有道翻译"},
         {value: services.tencent, label: "腾讯云翻译"},
-        {value: services.chromeTranslator, label: "Chrome内置AI翻译"},
         // 大模型翻译
         {value: "ai", label: "AI翻译", disabled: true},
         {value: services.siliconCloud, label: "硅基流动"},
@@ -474,18 +480,7 @@ export const options = {
         {value: "dark", label: "暗色主题"},
     ],
     // 输入框翻译目标语言选项
-    inputBoxTranslationTarget: [
-        {value: "zh-Hans", label: "中文"},
-        {value: "en", label: "英语"},
-        {value: "ja", label: "日语"},
-        {value: "ko", label: "韩语"},
-        {value: "fr", label: "法语"},
-        {value: "ru", label: "俄语"},
-        {value: "es", label: "西班牙语"},
-        {value: "de", label: "德语"},
-        {value: "pt", label: "葡萄牙语"},
-        {value: "it", label: "意大利语"},
-    ],
+    inputBoxTranslationTarget: getTranslationTargetOptions(),
     // 输入框翻译触发方式选项
     inputBoxTranslationTrigger: [
         {value: "disabled", label: "关闭"},
@@ -495,6 +490,103 @@ export const options = {
     ],
 };
 
+type OptionMessagePath = Extract<MessagePath, `option.${string}`>;
+export type OptionTranslator = (path: OptionMessagePath) => string;
+
+type OptionItem = { value: string | number | boolean; label: string; [key: string]: unknown };
+
+function localizeOptionItems<T extends OptionItem>(
+    items: readonly T[],
+    labels: Record<string, OptionMessagePath>,
+    translate: OptionTranslator,
+): T[] {
+    return items.map((item) => {
+        const key = labels[String(item.value)];
+        return key ? { ...item, label: translate(key) } : { ...item };
+    });
+}
+
+/**
+ * UI-facing option labels are resolved at render time so Settings and the popup
+ * follow the selected Mercury Translate interface language. The static `options`
+ * export remains available to non-UI code that only needs stable values/classes.
+ */
+export function getLocalizedOptions(translate: OptionTranslator): typeof options {
+    const serviceLabels: Record<string, OptionMessagePath> = {
+        machine: 'option.machineTranslation',
+        ai: 'option.aiTranslation',
+        [services.chromeTranslator]: 'option.chromeLocal',
+        [services.microsoft]: 'option.microsoftOnline',
+        [services.google]: 'option.googleOnline',
+        [services.deeplx]: 'option.deeplxExperimental',
+        [services.custom]: 'option.customEndpoint',
+    };
+    const serviceDescriptions: Record<string, OptionMessagePath> = {
+        [services.chromeTranslator]: 'option.chromeLocalDescription',
+        [services.microsoft]: 'option.microsoftOnlineDescription',
+        [services.google]: 'option.googleOnlineDescription',
+        [services.deeplx]: 'option.deeplxExperimentalDescription',
+    };
+    const styleLabels: Record<string, OptionMessagePath> = {
+        basic: 'option.basicStyle', underline: 'option.underlineStyle', card: 'option.cardStyle',
+        highlight: 'option.highlightStyle', background: 'option.backgroundStyle', special: 'option.specialStyle',
+        pro: 'option.professionalStyle', transparent: 'option.transparentStyle',
+        0: 'option.plainStyle', 1: 'option.boldStyle', 2: 'option.italicStyle', 3: 'option.shadowStyle',
+        4: 'option.solidUnderline', 5: 'option.dottedUnderline', 6: 'option.wavyUnderline',
+        7: 'option.simpleCard', 8: 'option.gradientCard', 9: 'option.paperCard',
+        10: 'option.learningMark', 11: 'option.marker', 12: 'option.softGradient',
+        13: 'option.warmYellow', 14: 'option.freshBlue', 15: 'option.elegantGray',
+        16: 'option.quote', 17: 'option.border', 18: 'option.readingFocus', 19: 'option.cleanUnderline',
+        20: 'option.codeStyle', 21: 'option.bookStyle', 22: 'option.dimmed', 23: 'option.transparent',
+    };
+
+    return {
+        ...options,
+        minimaxBillingPlan: localizeOptionItems(options.minimaxBillingPlan, {
+            payg: 'option.payAsYouGo', 'token-plan': 'option.tokenPlan',
+        }, translate),
+        minimaxRegion: localizeOptionItems(options.minimaxRegion, {
+            cn: 'option.chinaRegion', global: 'option.globalRegion',
+        }, translate),
+        on: localizeOptionItems(options.on, { true: 'option.enabled', false: 'option.disabled' }, translate),
+        autoTranslate: localizeOptionItems(options.autoTranslate, { true: 'option.enabled', false: 'option.disabled' }, translate),
+        useCache: localizeOptionItems(options.useCache, { true: 'option.enabled', false: 'option.disabled' }, translate),
+        form: localizeOptionItems(options.form, { auto: 'option.autoDetect' }, translate),
+        deepseekApiType: localizeOptionItems(options.deepseekApiType, {
+            auto: 'option.automatic', responses: 'option.responsesApi', chat: 'option.chatCompletion',
+        }, translate),
+        deepseekThinkingMode: localizeOptionItems(options.deepseekThinkingMode, {
+            disabled: 'option.thinkingDisabled', enabled: 'option.enabled',
+        }, translate),
+        keys: localizeOptionItems(options.keys, {
+            none: 'option.disableHotkey', Computer: 'option.keyboardOptions', '`': 'option.tildeKey',
+            mouse: 'option.mouseOptions', DoubleClick: 'option.mouseDoubleClick', LongPress: 'option.mouseLongPress',
+            MiddleClick: 'option.middleClick', touchscreen: 'option.touchscreenOptions', TwoFinger: 'option.twoFinger',
+            ThreeFinger: 'option.threeFinger', FourFinger: 'option.fourFinger', DoubleClickScree: 'option.doubleTap',
+            TripleClickScree: 'option.tripleTap', custom: 'option.customHotkey',
+        }, translate),
+        services: options.services.map((item) => ({
+            ...item,
+            label: serviceLabels[item.value] ? translate(serviceLabels[item.value]) : item.label,
+            ...(serviceDescriptions[item.value] ? { description: translate(serviceDescriptions[item.value]) } : {}),
+        })),
+        display: localizeOptionItems(options.display, {
+            0: 'option.translationOnlyMode', 1: 'option.bilingualMode',
+        }, translate),
+        styles: localizeOptionItems(options.styles, styleLabels, translate),
+        floatingBallHotkeys: localizeOptionItems(options.floatingBallHotkeys, {
+            none: 'option.disableHotkey', 'Alt+T': 'option.defaultFloatingHotkey', custom: 'option.customHotkey',
+        }, translate),
+        theme: localizeOptionItems(options.theme, {
+            auto: 'option.followSystem', light: 'option.lightTheme', dark: 'option.darkTheme',
+        }, translate),
+        inputBoxTranslationTrigger: localizeOptionItems(options.inputBoxTranslationTrigger, {
+            disabled: 'option.disabled', triple_space: 'option.tripleSpace', triple_equal: 'option.tripleEqual',
+            triple_dash: 'option.tripleDash',
+        }, translate),
+    } as unknown as typeof options;
+}
+
 export const defaultOption = {
     on: true,
     from: "auto",
@@ -502,9 +594,10 @@ export const defaultOption = {
     style: 1,
     display: 1,
     hotkey: "Control",
-    service: services.freeTranslation,
+    service: services.chromeTranslator,
     custom: "http://localhost:11434/v1/chat/completions",
-    deeplx: DEFAULT_DEEPLX_ENDPOINT,
+    // DeepLX 是实验性服务。只有用户显式填入端点时才会请求它。
+    deeplx: "",
     system_role:
         "You are a professional, authentic machine translation engine.",
     user_role: `Translate the following text into {{to}}, If translation is unnecessary (e.g. proper nouns, codes, etc.), return the original text. NO explanations. NO notes:

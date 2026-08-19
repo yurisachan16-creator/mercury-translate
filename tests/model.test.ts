@@ -41,13 +41,15 @@ describe('AI 模型编号列表', () => {
         expect(models.get(services.groq)).not.toContain('whisper-large-v3');
         expect(models.get(services.openrouter)?.at(-1)).toBe(customModelString);
         expect(options.services.find(option => option.value === services.zhipu)?.label).toBe('智谱');
-        expect(options.services.find(option => option.value === services.freeTranslation)?.label).toBe('免费翻译服务');
-        expect(options.services[1]?.value).toBe(services.freeTranslation);
-        expect(options.services.find(option => option.value === services.freeTranslation)?.description)
-            .toContain('微软翻译、DeepLX、谷歌翻译依次尝试');
+        expect(options.services.find(option => option.value === services.chromeTranslator)?.label).toBe('Chrome 本地翻译');
+        expect(options.services[1]?.value).toBe(services.chromeTranslator);
+        expect(options.services.find(option => option.value === services.chromeTranslator)?.description)
+            .toContain('设备上使用 Chrome 内置翻译模型');
+        expect(options.services.find(option => option.value === services.freeTranslation)).toBeUndefined();
+        expect(options.services.find(option => option.value === services.deeplx)?.experimental).toBe(true);
         expect(options.services.every(option => !/[🌟⭐★]/u.test(option.label))).toBe(true);
         expect(servicesType.isMachine(services.freeTranslation)).toBe(true);
-        expect(defaultOption.service).toBe(services.freeTranslation);
+        expect(defaultOption.service).toBe(services.chromeTranslator);
     });
 
     it('所有需要模型的 AI 服务默认使用推荐模型档位', () => {
@@ -72,6 +74,20 @@ describe('图片翻译配置', () => {
         expect(normalizeConfig({}).disableImageTranslator).toBe(true);
         expect(normalizeConfig({disableImageTranslator: false}).disableImageTranslator).toBe(false);
         expect(normalizeConfig({disableImageTranslator: true}).disableImageTranslator).toBe(true);
+    });
+});
+
+describe('DeepLX 实验服务', () => {
+    it('默认关闭，且不会继续使用未显式启用的旧配置', () => {
+        expect(new Config().enableDeepLXExperimental).toBe(false);
+        expect(normalizeConfig({service: services.deeplx}).service).toBe(services.chromeTranslator);
+        expect(normalizeConfig({
+            service: services.deeplx,
+            enableDeepLXExperimental: true,
+        })).toMatchObject({
+            service: services.deeplx,
+            enableDeepLXExperimental: true,
+        });
     });
 });
 
