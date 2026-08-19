@@ -1,6 +1,6 @@
 # Plan: Mercury Translate GitHub、版本管理与 repo-harness 接入
 
-> **Status**: Approved
+> **Status**: Executing
 > **Created**: 20260819-2119
 > **Slug**: github-repo-harness-bootstrap
 > **Planning Source**: repo-harness-plan
@@ -132,8 +132,8 @@ Create the public standalone repository `yurisachan16-creator/mercury-translate`
 
 - [x] Audit and commit the Mercury Translate v0.1.0 product release candidate.
 - [x] Initialize repo-harness Standard, CodeGraph, root agent contracts and capability prefixes.
-- [ ] Complete GitHub CI, templates, Dependabot, version guards and repository governance.
-- [ ] Create the public GitHub repository, push baseline and bootstrap branch, then open the PR.
+- [x] Complete GitHub CI, templates, Dependabot, version guards and repository governance.
+- [x] Create the public GitHub repository, push baseline and bootstrap branch, then open the PR.
 - [ ] Run local/repo-harness checks and GitHub CI, record review and acceptance evidence, and merge by rebase.
 - [ ] Create annotated `v0.1.0`, verify the GitHub Release assets and checksum, and refresh handoff state.
 
@@ -143,7 +143,7 @@ Create the public standalone repository `yurisachan16-creator/mercury-translate`
 ## Task Breakdown
 - [x] Audit and commit the Mercury Translate v0.1.0 product release candidate.
 - [x] Initialize repo-harness Standard, CodeGraph, root agent contracts and capability prefixes.
-- [ ] Complete GitHub CI, templates, Dependabot, version guards and repository governance.
-- [ ] Create the public GitHub repository, push baseline and bootstrap branch, then open the PR.
+- [x] Complete GitHub CI, templates, Dependabot, version guards and repository governance.
+- [x] Create the public GitHub repository, push baseline and bootstrap branch, then open the PR.
 - [ ] Run local/repo-harness checks and GitHub CI, record review and acceptance evidence, and merge by rebase.
 - [ ] Create annotated `v0.1.0`, verify the GitHub Release assets and checksum, and refresh handoff state.
