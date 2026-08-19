@@ -1,8 +1,8 @@
 # 设置总览
 
-打开 FluentRead 弹窗，点击设置图标即可进入选项页。设置会保存在当前浏览器的扩展存储中，不需要登录账号。
+打开 Mercury Translate 弹窗，点击设置图标即可进入选项页。设置会保存在当前浏览器的扩展存储中，不需要登录账号。
 
-<img class="doc-screenshot" src="/screenshots/settings-general.png" alt="FluentRead general settings" />
+<img class="doc-screenshot" src="/screenshots/settings-general.png" alt="Mercury Translate general settings" />
 
 ## 常用设置
 
@@ -17,7 +17,7 @@
 
 ### 翻译样式
 
-调整译文的颜色、背景、字号和显示方式。样式会尽量隔离在 FluentRead 的内容节点内，不主动改写网站原有 CSS。
+调整译文的颜色、背景、字号和显示方式。样式会尽量隔离在 Mercury Translate 的内容节点内，不主动改写网站原有 CSS。
 
 ### 主题与界面
 
@@ -32,7 +32,7 @@
 - 可选的超时、并发或高级参数；
 - 当前配置是否完整的状态提示。
 
-<img class="doc-screenshot" src="/screenshots/settings-services.png" alt="FluentRead translation services settings" />
+<img class="doc-screenshot" src="/screenshots/settings-services.png" alt="Mercury Translate translation services settings" />
 
 不要把 API 密钥写入公开 Issue、截图或仓库。服务的计费、配额、地区限制和数据保留策略由服务提供方决定。
 

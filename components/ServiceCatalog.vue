@@ -1,22 +1,22 @@
 <template>
   <section
     class="service-catalog"
-    aria-label="翻译服务配置"
+    :aria-label="t('serviceCatalog.configuration')"
     :data-default-service="defaultService"
     :data-editing-service="service"
   >
     <div class="catalog-layout">
-      <aside class="service-rail" aria-label="翻译服务列表">
+      <aside class="service-rail" :aria-label="t('serviceCatalog.serviceList')">
         <label class="catalog-search">
           <span aria-hidden="true">⌕</span>
-          <input v-model.trim="serviceQuery" type="search" placeholder="搜索翻译服务" />
+          <input v-model.trim="serviceQuery" type="search" :placeholder="t('serviceCatalog.searchServices')" />
         </label>
 
         <div v-if="filteredGroups.length" class="service-groups">
           <section v-for="group in filteredGroups" :key="group.id" class="service-group">
             <div class="group-heading">
               <strong>{{ group.label }}</strong>
-              <span>{{ group.items.length }} 项</span>
+              <span>{{ t('serviceCatalog.items', { count: group.items.length }) }}</span>
             </div>
             <button
               v-for="item in group.items"
@@ -31,26 +31,26 @@
               <ServiceIcon :service="item.value" :label="item.label" />
               <span class="service-copy">
                 <strong>{{ item.label }}</strong>
-                <small>{{ group.id === 'machine' ? '机器翻译' : 'AI 翻译' }}</small>
+                <small>{{ group.id === 'machine' ? t('serviceCatalog.machineTranslation') : t('serviceCatalog.aiTranslation') }}</small>
               </span>
               <span
                 v-if="defaultService === item.value"
                 class="current-dot"
-                title="默认翻译服务"
+                :title="t('serviceCatalog.defaultService')"
               ></span>
             </button>
           </section>
         </div>
-        <p v-else class="catalog-empty">没有匹配的翻译服务</p>
+        <p v-else class="catalog-empty">{{ t('serviceCatalog.noMatchingServices') }}</p>
       </aside>
 
-      <section class="service-detail" aria-label="当前翻译服务详情">
+      <section class="service-detail" :aria-label="t('serviceCatalog.currentServiceDetails')">
         <div class="detail-hero">
           <ServiceIcon :service="service" :label="selectedService?.label" size="large" />
           <div>
             <div class="detail-title-row">
-              <h4>{{ selectedService?.label || '尚未配置服务' }}</h4>
-              <span class="active-badge">{{ service === defaultService ? '当前默认' : '正在配置' }}</span>
+              <h4>{{ selectedService?.label || t('serviceCatalog.noServiceConfigured') }}</h4>
+              <span class="active-badge">{{ service === defaultService ? t('serviceCatalog.currentDefault') : t('serviceCatalog.configuring') }}</span>
             </div>
             <p v-if="selectedService?.description">{{ selectedService.description }}</p>
           </div>
@@ -59,18 +59,18 @@
         <div v-if="showModel" class="model-section">
           <div class="model-heading">
             <div>
-              <span>模型列表</span>
-              <strong>{{ selectedModel || '尚未选择模型' }}</strong>
+              <span>{{ t('serviceCatalog.modelList') }}</span>
+              <strong>{{ selectedModel ? displayModelLabel(selectedModel) : t('serviceCatalog.noModelSelected') }}</strong>
             </div>
             <label v-if="modelOptions.length > commonModelCount" class="model-search">
               <span aria-hidden="true">⌕</span>
-              <input v-model.trim="modelQuery" type="search" placeholder="搜索模型" />
+              <input v-model.trim="modelQuery" type="search" :placeholder="t('serviceCatalog.searchModels')" />
             </label>
           </div>
 
           <div v-if="displayedModels.length" class="model-list">
             <div class="model-list-heading">
-              <strong>{{ modelQuery ? '搜索结果' : moreModelsOpen ? '全部模型' : '常用模型' }}</strong>
+              <strong>{{ modelQuery ? t('serviceCatalog.searchResults') : moreModelsOpen ? t('serviceCatalog.allModels') : t('serviceCatalog.commonModels') }}</strong>
               <span>{{ displayedModels.length }}</span>
             </div>
             <div
@@ -78,7 +78,7 @@
               class="model-grid"
               :class="{ expanded: moreModelsOpen || modelQuery }"
               role="listbox"
-              aria-label="可用模型"
+              :aria-label="t('serviceCatalog.availableModels')"
             >
               <button
                 v-for="model in displayedModels"
@@ -92,8 +92,8 @@
               >
                 <ServiceIcon :service="model === customModelLabel ? 'custom' : service" :label="model" size="model" />
                 <span>
-                  <strong>{{ model }}</strong>
-                  <small>{{ model === customModelLabel ? '填写服务商支持的模型标识' : '使用此模型进行翻译' }}</small>
+                  <strong>{{ displayModelLabel(model) }}</strong>
+                  <small>{{ model === customModelLabel ? t('serviceCatalog.customModelHint') : t('serviceCatalog.useThisModel') }}</small>
                 </span>
                 <span v-if="selectedModel === model" class="checkmark">✓</span>
               </button>
@@ -108,21 +108,21 @@
               @click="moreModelsOpen = !moreModelsOpen"
             >
               <span>
-                <strong>更多模型</strong>
-                <small>{{ moreModels.length }} 个较少使用的模型</small>
+                <strong>{{ t('serviceCatalog.moreModels') }}</strong>
+                <small>{{ t('serviceCatalog.lessUsedModels', { count: moreModels.length }) }}</small>
               </span>
-              <b>{{ moreModelsOpen ? '收起' : '展开' }} <i aria-hidden="true">⌄</i></b>
+              <b>{{ moreModelsOpen ? t('serviceCatalog.collapse') : t('serviceCatalog.expand') }} <i aria-hidden="true">⌄</i></b>
             </button>
           </div>
-          <p v-else class="catalog-empty">没有匹配的模型</p>
+          <p v-else class="catalog-empty">{{ t('serviceCatalog.noMatchingModels') }}</p>
         </div>
 
         <div v-else class="no-model-panel">
           <span aria-hidden="true">✓</span>
-          <div><strong>此服务无需模型配置</strong><p>机器翻译直接使用自身引擎。</p></div>
+          <div><strong>{{ t('serviceCatalog.noModelConfiguration') }}</strong><p>{{ t('serviceCatalog.machineUsesOwnEngine') }}</p></div>
         </div>
 
-        <div class="service-configuration-slot" aria-label="当前服务配置">
+        <div class="service-configuration-slot" :aria-label="t('serviceCatalog.currentServiceConfiguration')">
           <slot name="configuration" />
         </div>
 
@@ -133,6 +133,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ServiceIcon from '@/components/ServiceIcon.vue'
 import { customModelString } from '@/entrypoints/utils/option'
 import {
@@ -151,6 +152,8 @@ const props = defineProps<{
   modelOptions: string[]
   showModel: boolean
 }>()
+
+const { t } = useI18n({ useScope: 'global' })
 
 defineEmits<{
   'update:service': [value: string]
@@ -172,6 +175,7 @@ const displayedModels = computed(() => modelQuery.value
   ? filteredModels.value
   : moreModelsOpen.value ? [...modelGroups.value.common, ...moreModels.value] : modelGroups.value.common)
 const selectedService = computed(() => groups.value.flatMap((group) => group.items).find((item) => item.value === props.service))
+const displayModelLabel = (model: string) => model === customModelLabel ? t('serviceConfig.customModel') : model
 
 watch(() => props.service, () => {
   modelQuery.value = ''

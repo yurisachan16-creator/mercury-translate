@@ -23,13 +23,13 @@ async function claude(message: any) {
         });
 
         if (!resp.ok) {
-            throw new Error(`请求失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+            throw new Error(`请求失败: ${resp.status} ${resp.statusText}`);
         }
 
         const result = await resp.json();
         return result.content[0].text;
     } catch (error) {
-        console.error('Claude API 调用失败:', error);
+        console.error('Claude API 调用失败');
         throw error;
     }
 }

@@ -24,13 +24,13 @@ async function grok(message: any) {
         });
 
         if (!resp.ok) {
-            throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+            throw new Error(`翻译失败: ${resp.status} ${resp.statusText}`);
         }
 
         const result = await resp.json();
         return contentPostHandler(result.choices[0].message.content);
     } catch (error) {
-        console.error('Grok API调用失败:', error);
+        console.error('Grok API调用失败');
         throw error;
     }
 }

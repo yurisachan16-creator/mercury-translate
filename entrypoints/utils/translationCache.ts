@@ -145,7 +145,7 @@ class TranslationCache {
       this.remember(record);
       return record.translation;
     } catch (error) {
-      console.warn('[FluentRead] translation cache read failed:', error);
+      console.warn('[Mercury Translate] translation cache read failed:', error);
       return null;
     }
   }
@@ -192,7 +192,7 @@ class TranslationCache {
       this.remember(record);
       return true;
     } catch (error) {
-      console.warn('[FluentRead] translation cache write failed:', error);
+      console.warn('[Mercury Translate] translation cache write failed:', error);
       return false;
     }
   }
@@ -210,7 +210,7 @@ class TranslationCache {
         if (isExpired(record, now)) this.memory.delete(key);
       }
     } catch (error) {
-      console.warn('[FluentRead] translation cache cleanup failed:', error);
+      console.warn('[Mercury Translate] translation cache cleanup failed:', error);
     }
   }
 
@@ -219,7 +219,7 @@ class TranslationCache {
     try {
       await translationCacheDb.entries.clear();
     } catch (error) {
-      console.warn('[FluentRead] translation cache clear failed:', error);
+      console.warn('[Mercury Translate] translation cache clear failed:', error);
       throw error;
     }
   }

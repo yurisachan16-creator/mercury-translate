@@ -66,19 +66,19 @@ describe('统一配置存储', () => {
         expect((history.entries[1].config as unknown as Record<string, unknown>).__fluentConfigRevision).toBeUndefined();
     });
 
-    it('为旧配置补齐默认关闭的视频字幕 Beta、独立微软翻译服务和默认字号', async () => {
+    it('为旧配置补齐默认关闭的视频字幕 Beta、独立本地翻译服务和默认字号', async () => {
         const configStore = await loadConfigModule(storedConfig);
 
         await configStore.configReady;
 
         expect(configStore.config.videoTranslationEnabled).toBe(false);
-        expect(configStore.config.videoService).toBe('microsoft');
+        expect(configStore.config.videoService).toBe('chromeTranslator');
         expect(configStore.config.videoSubtitleVisible).toBe(true);
         expect(configStore.config.videoSubtitleDisplayMode).toBe('bilingual');
         expect(configStore.config.videoSubtitleFontSize).toBe(100);
     });
 
-    it('保留用户选择的视频 AI 服务，并将未知服务回退到微软翻译', async () => {
+    it('保留用户选择的视频 AI 服务，并将未知服务回退到本地翻译', async () => {
         const aiConfigStore = await loadConfigModule({ ...storedConfig, videoService: 'openai' });
 
         await aiConfigStore.configReady;
@@ -89,19 +89,19 @@ describe('统一配置存储', () => {
 
         await invalidConfigStore.configReady;
 
-        expect(invalidConfigStore.config.videoService).toBe('microsoft');
+        expect(invalidConfigStore.config.videoService).toBe('chromeTranslator');
     });
 
-    it('把早期 Beta 写入的 DeepLX 默认值一次迁移为微软翻译', async () => {
+    it('把早期 Beta 写入的 DeepLX 默认值一次迁移为本地翻译', async () => {
         const configStore = await loadConfigModule({ ...storedConfig, videoService: 'deeplx' });
 
         await configStore.configReady;
 
-        expect(configStore.config.videoService).toBe('microsoft');
+        expect(configStore.config.videoService).toBe('chromeTranslator');
         expect(configStore.config.videoServiceDefaultMigrated).toBe(true);
         expect(storageMock.setItem).toHaveBeenCalledWith(
             'local:config',
-            expect.objectContaining({ videoService: 'microsoft', videoServiceDefaultMigrated: true }),
+            expect.objectContaining({ videoService: 'chromeTranslator', videoServiceDefaultMigrated: true }),
         );
     });
 

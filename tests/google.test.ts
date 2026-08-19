@@ -90,7 +90,7 @@ describe('谷歌翻译适配器', () => {
         expect(batchRequest[0][0][2]).toBeNull();
         expect(batchRequest[0][0][3]).toBe('generic');
         expect(JSON.parse(batchRequest[0][0][1])).toEqual([
-            ['This domain is for use in documents.', 'auto', 'zh-Hans', true],
+            ['This domain is for use in documents.', 'auto', 'zh-CN', true],
             [null],
         ]);
     });
@@ -139,7 +139,7 @@ describe('谷歌翻译适配器', () => {
         expect(init?.headers).toBeUndefined();
     });
 
-    it('所有接口失败时汇总原因、响应摘要并隐藏 CAPTCHA HTML', async () => {
+    it('所有接口失败时汇总脱敏原因，不暴露服务商响应正文', async () => {
         fetchMock
             .mockResolvedValueOnce(mockResponse('<!doctype html><html>captcha details</html>', {
                 ok: false,
@@ -151,7 +151,7 @@ describe('谷歌翻译适配器', () => {
 
         await expect(translateGoogleText('hello', 'en', 'zh-Hans'))
             .rejects.toThrow(
-                `谷歌翻译所有匿名接口均失败：主网页 RPC: HTTP 429 Too Many Requests，响应: 收到 HTML 页面（可能触发了 CAPTCHA）；备用网页 RPC: 返回格式异常，响应摘要: )]}' [["unexpected", true]]；旧版 gtx 接口: 返回的不是 JSON，响应摘要: not-json`,
+                '谷歌翻译所有匿名接口均失败：主网页 RPC: HTTP 429 Too Many Requests；备用网页 RPC: 返回格式异常，响应解析失败；旧版 gtx 接口: 返回的不是 JSON，响应解析失败',
             );
     });
 

@@ -1,8 +1,14 @@
 import { config } from "@/entrypoints/utils/config";
+import { LocalProviderUnavailableError } from '@/entrypoints/utils/providerCapabilities';
+import { services } from '@/entrypoints/utils/option';
 import type { OcrLine } from "@/entrypoints/utils/imageTranslationCore";
 import type { AreaTranslationSelection } from "@/entrypoints/utils/areaTranslationCore";
 import type { ImageOcrLanguageCode } from "@/entrypoints/utils/imageOcrLanguages";
 import type { OffscreenImageTranslationResult } from "@/entrypoints/offscreen/imageTranslation";
+import {
+    isNetworkConsentRequiredOutcome,
+    type NetworkConsentRequiredOutcome,
+} from "@/entrypoints/utils/providerConsent";
 
 /**
  * Chrome 内置翻译 API 服务
@@ -23,8 +29,8 @@ async function translateWithOffscreen(message: any): Promise<any> {
                 type: 'CHROME_TRANSLATE_OFFSCREEN',
                 data: {
                     text: message.origin,
-                    from: config.from,
-                    to: config.to
+                    from: typeof message.from === 'string' ? message.from : config.from,
+                    to: typeof message.to === 'string' ? message.to : config.to
                 }
             }, (response: any) => {
                 if (chrome.runtime.lastError) {
@@ -47,8 +53,11 @@ async function translateWithOffscreen(message: any): Promise<any> {
 
         throw new Error('无效的响应格式');
     } catch (error) {
-        console.error('Offscreen 翻译失败:', error);
-        throw new Error(`Chrome Translation API 不可用：${error instanceof Error ? error.message : '未知错误'}`);
+        console.error('Offscreen 翻译失败');
+        throw new LocalProviderUnavailableError(
+            services.chromeTranslator,
+            `Chrome Translation API 不可用：${error instanceof Error ? error.message : '未知错误'}`,
+        );
     }
 }
 
@@ -73,7 +82,7 @@ async function ensureOffscreenDocument() {
 
         console.log('Offscreen 文档创建成功');
     } catch (error) {
-        console.error('创建 offscreen 文档失败:', error);
+        console.error('创建 offscreen 文档失败');
         throw new Error('无法创建 offscreen 文档');
     }
 }
@@ -104,7 +113,9 @@ export async function translateImageWithOffscreen(
     image: string,
     sourceLanguage: string,
     title: string,
-): Promise<OffscreenImageTranslationResult> {
+    serviceOverride?: string,
+    consentScopeId?: string,
+): Promise<OffscreenImageTranslationResult | NetworkConsentRequiredOutcome> {
     await ensureOffscreenDocument();
 
     const response = await new Promise<any>((resolve, reject) => {
@@ -113,6 +124,8 @@ export async function translateImageWithOffscreen(
             image,
             sourceLanguage,
             title,
+            serviceOverride,
+            consentScopeId,
         }, (result: any) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
@@ -122,6 +135,7 @@ export async function translateImageWithOffscreen(
         });
     });
 
+    if (isNetworkConsentRequiredOutcome(response)) return response;
     if (response?.success) return response;
     throw new Error(response?.error || '图片翻译失败');
 }
@@ -131,7 +145,9 @@ export async function translateAreaWithOffscreen(
     sourceLanguage: string,
     title: string,
     selection: AreaTranslationSelection,
-): Promise<OffscreenImageTranslationResult> {
+    serviceOverride?: string,
+    consentScopeId?: string,
+): Promise<OffscreenImageTranslationResult | NetworkConsentRequiredOutcome> {
     await ensureOffscreenDocument();
 
     const response = await new Promise<any>((resolve, reject) => {
@@ -141,6 +157,8 @@ export async function translateAreaWithOffscreen(
             sourceLanguage,
             title,
             selection,
+            serviceOverride,
+            consentScopeId,
         }, (result: any) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
@@ -150,6 +168,7 @@ export async function translateAreaWithOffscreen(
         });
     });
 
+    if (isNetworkConsentRequiredOutcome(response)) return response;
     if (response?.success) return response;
     throw new Error(response?.error || '圈选翻译失败');
 }
@@ -173,24 +192,61 @@ export async function downloadImageOcrLanguagesWithOffscreen(languages: ImageOcr
     if (!response?.success) throw new Error(response?.error || '图片 OCR 语言包下载失败');
 }
 
+export async function clearImageOcrLanguagesWithOffscreen(): Promise<void> {
+    await ensureOffscreenDocument();
+
+    const response = await new Promise<any>((resolve, reject) => {
+        chrome.runtime.sendMessage({
+            type: 'MERCURY_IMAGE_OCR_CLEAR_OFFSCREEN',
+        }, (result: any) => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve(result);
+        });
+    });
+
+    if (!response?.success) throw new Error(response?.error || 'OCR 语言包清除失败');
+}
+
+export type ChromeTranslatorAvailability = 'ready' | 'downloadable' | 'downloading' | 'unsupported' | 'after-detection';
+
+export async function checkChromeTranslatorAvailabilityWithOffscreen(
+    from: string,
+    to: string,
+): Promise<ChromeTranslatorAvailability> {
+    await ensureOffscreenDocument();
+    const response = await new Promise<any>((resolve, reject) => {
+        chrome.runtime.sendMessage({
+            type: 'MERCURY_CHROME_TRANSLATOR_AVAILABILITY_OFFSCREEN',
+            from,
+            to,
+        }, (result: any) => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve(result);
+        });
+    });
+    if (!response?.success || typeof response.availability !== 'string') {
+        throw new Error(response?.error || '无法检查 Chrome 本地翻译状态');
+    }
+    return response.availability as ChromeTranslatorAvailability;
+}
+
 // 主翻译函数
 export default async function chromeTranslator(message: any): Promise<any> {
-    // console.log('Chrome Translator 收到消息:', message);
-
     const text = message.origin;
     
     if (!text || typeof text !== 'string' || text.trim() === '') {
-        // console.error('翻译文本为空或无效:', { text, type: typeof text, message });
         throw new Error('翻译文本不能为空');
     }
 
     // 检查是否在 background script 环境中
     if (typeof window === 'undefined') {
-        // console.log('在 background script 中，使用 offscreen API');
         // 在 background script 中，使用 offscreen API
         return await translateWithOffscreen(message);
     }
 
     // 如果在其他环境中，抛出错误
-    throw new Error('Chrome Translation API 只能在 Google Chrome 浏览器 v138 stable 版本以上使用');
+    throw new LocalProviderUnavailableError(
+        services.chromeTranslator,
+        'Chrome Translation API 只能在 Google Chrome 浏览器 v138 stable 版本以上使用',
+    );
 }

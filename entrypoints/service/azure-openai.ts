@@ -33,7 +33,6 @@ async function azureOpenai(message: any) {
         });
 
         if (!resp.ok) {
-            const errorText = await resp.text();
             let errorMessage = `Azure OpenAI API 调用失败: ${resp.status} ${resp.statusText}`;
             
             // 根据状态码提供更具体的错误信息
@@ -50,8 +49,6 @@ async function azureOpenai(message: any) {
                 case 500:
                     errorMessage = 'Azure OpenAI 服务内部错误，请稍后重试';
                     break;
-                default:
-                    errorMessage += `\n详细信息: ${errorText}`;
             }
             
             throw new Error(errorMessage);
@@ -65,7 +62,7 @@ async function azureOpenai(message: any) {
         
         return contentPostHandler(result.choices[0].message.content);
     } catch (error) {
-        console.error('Azure OpenAI API调用失败:', error);
+        console.error('Azure OpenAI API调用失败');
         throw error;
     }
 }

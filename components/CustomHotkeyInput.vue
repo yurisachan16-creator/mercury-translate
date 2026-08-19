@@ -3,7 +3,7 @@
     <!-- 自定义快捷键输入对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      title="自定义快捷键"
+      :title="t('hotkey.title')"
       width="300px"
       :close-on-click-modal="false"
       :modal="false"
@@ -14,7 +14,7 @@
       <div class="hotkey-input-container">
         <div class="input-section">
           <el-text class="input-label">
-            请按下您想要设置的快捷键组合：
+            {{ t('hotkey.prompt') }}
           </el-text>
           <div 
             class="hotkey-input-field"
@@ -30,11 +30,11 @@
             ref="inputField"
           >
             <div v-if="!isRecording && !currentHotkey" class="placeholder">
-              点击这里开始录制快捷键...
+              {{ t('hotkey.clickToRecord') }}
             </div>
             <div v-else-if="isRecording" class="recording-text">
               <el-icon class="recording-icon"><Loading /></el-icon>
-              正在录制，请按下快捷键...
+              {{ t('hotkey.recording') }}
             </div>
             <div v-else-if="currentHotkey" class="hotkey-display">
               {{ parsedHotkey?.displayName || currentHotkey }}
@@ -56,13 +56,13 @@
           <!-- 成功提示 -->
           <div v-if="parsedHotkey?.isValid && !errorMessage && !conflictWarning" class="success-message">
             <el-icon><CircleCheckFilled /></el-icon>
-            快捷键有效，可以使用
+            {{ t('hotkey.valid') }}
           </div>
         </div>
 
         <!-- 预设快捷键推荐 -->
         <div class="preset-section">
-          <el-text class="section-title">或选择推荐的快捷键：</el-text>
+          <el-text class="section-title">{{ t('hotkey.preset') }}</el-text>
           <div class="preset-buttons">
             <el-button
               v-for="preset in recommendedHotkeys"
@@ -80,21 +80,21 @@
         <!-- 简化说明 -->
         <div class="help-section">
           <el-text size="small" type="info">
-            提示：建议使用修饰键组合（如 Ctrl+字母），避免与系统快捷键冲突。注意：不能使用 CMD 充当快捷键
+            {{ t('hotkey.help') }}
           </el-text>
         </div>
       </div>
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleCancel">取消</el-button>
-          <el-button @click="clearHotkey" v-if="currentHotkey">清除</el-button>
+          <el-button @click="handleCancel">{{ t('hotkey.cancel') }}</el-button>
+          <el-button @click="clearHotkey" v-if="currentHotkey">{{ t('hotkey.clear') }}</el-button>
           <el-button 
             type="primary" 
             @click="handleConfirm"
             :disabled="!canConfirm"
           >
-            确认
+            {{ t('hotkey.confirm') }}
           </el-button>
         </div>
       </template>
@@ -104,6 +104,7 @@
 
 <script setup lang="ts" name="CustomHotkeyInput">
 import { ref, computed, nextTick, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElDialog, ElButton, ElText, ElIcon } from 'element-plus';
 import { Loading, WarningFilled, Warning, CircleCheckFilled } from '@element-plus/icons-vue';
 import { parseHotkey, validateHotkeyConflicts, type ParsedHotkey } from '@/entrypoints/utils/hotkey';
@@ -117,6 +118,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   currentValue: ''
 });
+const { t } = useI18n({ useScope: 'global' });
 
 // Emits
 interface Emits {
@@ -181,15 +183,28 @@ function validateCurrentHotkey(hotkeyString: string) {
   const parsed = parseHotkey(hotkeyString);
   
   if (!parsed.isValid) {
-    errorMessage.value = parsed.errorMessage || '无效的快捷键';
+    errorMessage.value = localizeHotkeyValidationMessage(parsed.errorMessage);
     return;
   }
   
   // 检查冲突
   const conflictCheck = validateHotkeyConflicts(parsed);
   if (conflictCheck.hasConflict) {
-    conflictWarning.value = conflictCheck.conflictDescription || '可能存在冲突';
+    conflictWarning.value = conflictCheck.conflictDescription
+      ? t('hotkey.possibleConflict')
+      : '';
   }
+}
+
+function localizeHotkeyValidationMessage(message?: string): string {
+  if (!message) return t('hotkey.invalid');
+  if (message === '快捷键不能为空') return t('hotkey.empty');
+  if (message === '无效的快捷键格式') return t('hotkey.invalidFormat');
+  if (message === '单个字母键需要与修饰键组合使用') return t('hotkey.letterRequiresModifier');
+  if (message === 'CMD 键已被禁用，请使用其他修饰键组合') return t('hotkey.metaDisabled');
+  if (message.startsWith('不支持的按键:')) return t('hotkey.unsupportedKey', { key: message.slice('不支持的按键:'.length).trim() });
+  if (message.startsWith('不支持的修饰键:')) return t('hotkey.unsupportedModifier', { key: message.slice('不支持的修饰键:'.length).trim() });
+  return t('hotkey.invalid');
 }
 
 // 开始录制快捷键

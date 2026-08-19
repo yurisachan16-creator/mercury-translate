@@ -1,4 +1,5 @@
 import { customModelString, resolveConfiguredModel, servicesType } from '@/entrypoints/utils/option'
+import type { MessagePath } from '@/entrypoints/i18n/messages'
 
 export interface ServiceOption {
   value: string
@@ -62,12 +63,15 @@ export function getSelectedModelLabel(
   service: string,
   selectedModels: Record<string, string>,
   customModels: Record<string, string>,
+  translate?: (path: MessagePath) => string,
 ) {
   if (!servicesType.isUseModel(service)) return ''
 
   const selectedModel = selectedModels[service]
   const configuredModel = resolveConfiguredModel(selectedModel, customModels[service])
-  return configuredModel || (selectedModel === customModelString ? customModelString : '未选择模型')
+  if (configuredModel) return configuredModel
+  if (selectedModel === customModelString) return translate ? translate('serviceConfig.customModel') : customModelString
+  return translate ? translate('serviceCatalog.noModelSelected') : '未选择模型'
 }
 
 export function splitModelOptions(modelOptions: string[], selectedModel = '', visibleCount = 4) {

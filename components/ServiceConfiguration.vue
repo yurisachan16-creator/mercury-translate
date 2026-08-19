@@ -1,13 +1,37 @@
 <template>
   <section class="settings-section service-connection-section">
+    <div v-if="service === services.chromeTranslator" class="local-provider-status" role="status" aria-live="polite">
+      <div>
+        <strong>{{ t('serviceConfig.chromeLocalTranslator') }}</strong>
+        <p>{{ chromeAvailabilityLabel }}</p>
+      </div>
+      <button type="button" :disabled="chromeAvailabilityBusy" @click="checkChromeAvailability">
+        {{ chromeAvailabilityBusy ? t('serviceConfig.checking') : t('serviceConfig.recheck') }}
+      </button>
+    </div>
     <div v-if="compute.credentialWarning" class="credential-warning" role="alert">
-      <strong>配置提醒</strong>
+      <strong>{{ t('serviceConfig.configurationReminder') }}</strong>
       <span>{{ compute.credentialWarning }}</span>
+    </div>
+    <div v-if="networkConsentRequired" class="network-consent" role="status" aria-live="polite">
+      <div>
+        <strong>{{ t('serviceConfig.networkConsentTitle') }}</strong>
+        <p>{{ t('serviceConfig.networkConsentPrefix') }} {{ serviceLabel }}{{ t('serviceConfig.networkConsentSuffix') }}</p>
+      </div>
+      <div class="network-consent-actions">
+        <button type="button" :disabled="networkConsentBusy" @click="grantNetworkConsent('once')">
+          {{ t('serviceConfig.useOnce') }}
+        </button>
+        <button type="button" class="is-primary" :disabled="networkConsentBusy" @click="grantNetworkConsent('remember-default')">
+          {{ networkConsentBusy ? t('serviceConfig.saving') : t('serviceConfig.rememberAsDefault') }}
+        </button>
+      </div>
+      <small v-if="networkConsentMessage">{{ networkConsentMessage }}</small>
     </div>
     <div class="subsection-heading">
       <div>
-        <strong>连接参数</strong>
-        <small class="connection-test-hint">会发送一条很短的测试请求，可能产生少量用量。</small>
+        <strong>{{ t('serviceConfig.connectionParameters') }}</strong>
+        <small class="connection-test-hint">{{ t('serviceConfig.connectionTestHint') }}</small>
       </div>
     </div>
 
@@ -19,7 +43,7 @@
         :disabled="connectionTestBusy"
         @click="testConnection"
       >
-        {{ connectionTestBusy ? '检查中…' : '检查连接' }}
+        {{ connectionTestBusy ? t('serviceConfig.checking') : t('serviceConfig.checkConnection') }}
       </button>
     </Teleport>
 
@@ -31,33 +55,33 @@
       role="status"
       aria-live="polite"
     >
-      <strong>{{ connectionTestState === 'testing' ? '检查中' : connectionTestState === 'success' ? '连接正常' : '连接失败' }}</strong>
+      <strong>{{ connectionTestState === 'testing' ? t('serviceConfig.checkingShort') : connectionTestState === 'success' ? t('serviceConfig.connectionOk') : t('serviceConfig.connectionFailed') }}</strong>
       <span>{{ connectionTestMessage }}</span>
     </div>
 
     <div v-show="compute.showAI && compute.showToken" class="api-key-policy">
       <div class="api-key-policy-copy">
         <div class="api-key-policy-title">
-          <strong>API Key 鉴权</strong>
-          <el-tooltip class="box-item" effect="dark" content="关闭后，当前模型可在没有 API Key 时发起请求。" placement="top-start" :show-after="500">
-            <el-icon aria-label="API Key 鉴权说明"><InfoFilled /></el-icon>
+          <strong>{{ t('serviceConfig.apiKeyAuth') }}</strong>
+          <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.apiKeyAuthTip')" placement="top-start" :show-after="500">
+            <el-icon :aria-label="t('serviceConfig.apiKeyAuthHelp')"><InfoFilled /></el-icon>
           </el-tooltip>
           <span class="api-key-policy-status" :class="{ 'is-off': !compute.requireApiKey }">
-            {{ compute.requireApiKey ? '需要' : '免 Key' }}
+            {{ compute.requireApiKey ? t('serviceConfig.required') : t('serviceConfig.keyless') }}
           </span>
         </div>
-        <small class="api-key-policy-model">{{ config.model[service] || '未选择' }}</small>
+        <small class="api-key-policy-model">{{ config.model[service] || t('serviceConfig.notSelected') }}</small>
       </div>
-      <el-switch v-model="compute.requireApiKey" aria-label="当前模型是否需要 API Key" size="small" />
+      <el-switch v-model="compute.requireApiKey" :aria-label="t('serviceConfig.apiKeyRequiredAria')" size="small" />
     </div>
 
     <el-row v-show="compute.showToken" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="API访问令牌仅保存在本地，用于访问翻译服务。获取方式请参考对应服务的官方文档；翻译服务为 ollama 时，token 可为任意值" placement="top-start" :show-after="500">
-          <span class="popup-text popup-vertical-left">访问令牌<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+        <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.accessTokenTip')" placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">{{ t('serviceConfig.accessToken') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
         </el-tooltip>
       </el-col>
-      <el-col :span="12"><el-input v-model="config.token[service]" type="password" show-password placeholder="请输入API访问令牌" /></el-col>
+      <el-col :span="12"><el-input v-model="config.token[service]" type="password" show-password :placeholder="t('serviceConfig.accessTokenPlaceholder')" /></el-col>
     </el-row>
     <p v-if="compute.showMiniMaxRegion && minimaxKeyMismatch" class="minimax-key-note is-warning">
       {{ minimaxKeyMismatch }}
@@ -65,12 +89,12 @@
 
     <el-row v-show="compute.showMiniMaxRegion" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="按量付费和 Token Plan 使用不同的账户权益；请按控制台中 Key 的来源选择。" placement="top-start" :show-after="500">
-          <span class="popup-text popup-vertical-left">MiniMax 计费方式<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+        <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.minimaxBillingTip')" placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">{{ t('serviceConfig.minimaxBillingPlan') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
         </el-tooltip>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.minimaxBillingPlan" aria-label="MiniMax 计费方式" placeholder="请选择 MiniMax 计费方式">
+        <el-select v-model="config.minimaxBillingPlan" :aria-label="t('serviceConfig.minimaxBillingPlan')" :placeholder="t('serviceConfig.selectMinimaxBillingPlan')">
           <el-option class="select-left" v-for="item in options.minimaxBillingPlan" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-col>
@@ -78,101 +102,101 @@
 
     <el-row v-show="compute.showMiniMaxRegion" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="选择与 MiniMax Key 来源一致的 API 区域。Token Plan Key（sk-cp-）和按量付费 Key 不能互换。" placement="top-start" :show-after="500">
-          <span class="popup-text popup-vertical-left">MiniMax 区域<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+        <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.minimaxRegionTip')" placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">{{ t('serviceConfig.minimaxRegion') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
         </el-tooltip>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.minimaxRegion" aria-label="MiniMax API 区域" placeholder="请选择 MiniMax API 区域">
+        <el-select v-model="config.minimaxRegion" :aria-label="t('serviceConfig.minimaxApiRegion')" :placeholder="t('serviceConfig.selectMinimaxApiRegion')">
           <el-option class="select-left" v-for="item in options.minimaxRegion" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-col>
     </el-row>
 
     <div v-show="compute.showMiniMaxRegion" class="minimax-endpoint" data-minimax-endpoint>
-      <span>当前 API 地址</span>
+      <span>{{ t('serviceConfig.currentApiEndpoint') }}</span>
       <code>{{ minimaxEndpoint }}</code>
     </div>
 
     <el-row v-show="compute.showAzureOpenaiEndpoint" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="Azure OpenAI 服务端点地址，必须包含完整的部署信息。" placement="top-start" :show-after="500">
-          <span class="popup-text popup-vertical-left">Azure 端点<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
+        <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.azureEndpointTip')" placement="top-start" :show-after="500">
+          <span class="popup-text popup-vertical-left">{{ t('serviceConfig.azureEndpoint') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
         </el-tooltip>
       </el-col>
       <el-col :span="12">
-        <el-input v-model="config.azureOpenaiEndpoint" placeholder="https://your-resource.openai.azure.com/openai/deployments/your-model/chat/completions?api-version=2024-02-15-preview" :class="{ 'input-error': config.azureOpenaiEndpoint && !isValidAzureEndpoint(config.azureOpenaiEndpoint) }" />
-        <div v-if="config.azureOpenaiEndpoint && !isValidAzureEndpoint(config.azureOpenaiEndpoint)" class="error-text">端点地址格式不正确，请确保包含 openai.azure.com 域名和 /chat/completions 路径</div>
+        <el-input v-model="config.azureOpenaiEndpoint" placeholder="https://your-resource.openai.azure.com/openai/deployments/your-model/chat/completions?api-version=2024-02-15-preview" :class="{ 'input-error': config.azureOpenaiEndpoint && !isValidAzureEndpoint(config.azureOpenaiEndpoint) }" @change="ensureConfiguredProviderPermission" />
+        <div v-if="config.azureOpenaiEndpoint && !isValidAzureEndpoint(config.azureOpenaiEndpoint)" class="error-text">{{ t('serviceConfig.azureEndpointInvalid') }}</div>
       </el-col>
     </el-row>
 
     <el-row v-show="compute.showDeepLX" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="DeepLX API 服务地址，默认为本地地址。如果使用远程 DeepLX 服务，请修改为对应的服务地址" placement="top-start" :show-after="500"><span class="popup-text popup-vertical-left">服务地址</span></el-tooltip>
+        <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.deeplxEndpointTip')" placement="top-start" :show-after="500"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.serviceEndpoint') }}</span></el-tooltip>
       </el-col>
-      <el-col :span="12"><el-input v-model="config.deeplx" placeholder="http://localhost:1188/translate" /></el-col>
+      <el-col :span="12"><el-input v-model="config.deeplx" placeholder="http://localhost:1188/translate" @change="ensureConfiguredProviderPermission" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showAkSk" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="服务商提供的访问密钥。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">API Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.ak" placeholder="请输入Access Key" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.apiKeyTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">API Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.ak" :placeholder="t('serviceConfig.accessKeyPlaceholder')" /></el-col>
     </el-row>
     <el-row v-show="compute.showAkSk" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="服务商提供的私密密钥，请妥善保管。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">Secret Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.sk" type="password" placeholder="请输入Secret Key" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.secretKeyTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">Secret Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.sk" type="password" :placeholder="t('serviceConfig.secretKeyPlaceholder')" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showYoudao" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="有道翻译服务提供的 App Key。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">App Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.youdaoAppKey" placeholder="有道 AppKey" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.youdaoAppKeyTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">App Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.youdaoAppKey" :placeholder="t('serviceConfig.youdaoAppKeyPlaceholder')" /></el-col>
     </el-row>
     <el-row v-show="compute.showYoudao" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="有道翻译服务提供的 App Secret。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">App Secret<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.youdaoAppSecret" type="password" show-password placeholder="有道 AppSecret" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.youdaoAppSecretTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">App Secret<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.youdaoAppSecret" type="password" show-password :placeholder="t('serviceConfig.youdaoAppSecretPlaceholder')" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showTencent" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="腾讯云翻译服务提供的 SecretId。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">Secret ID<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.tencentSecretId" placeholder="腾讯云 SecretId" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.tencentSecretIdTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">Secret ID<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.tencentSecretId" :placeholder="t('serviceConfig.tencentSecretIdPlaceholder')" /></el-col>
     </el-row>
     <el-row v-show="compute.showTencent" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="腾讯云翻译服务提供的 SecretKey。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">Secret Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.tencentSecretKey" type="password" show-password placeholder="腾讯云 SecretKey" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.tencentSecretKeyTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">Secret Key<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.tencentSecretKey" type="password" show-password :placeholder="t('serviceConfig.tencentSecretKeyPlaceholder')" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showRobotId" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="填写对应 Coze 机器人的 ID。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">机器人ID<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.robot_id[service]" placeholder="请输入Coze机器人ID" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.robotIdTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.robotId') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.robot_id[service]" :placeholder="t('serviceConfig.cozeRobotIdPlaceholder')" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showCustom" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="填写兼容翻译请求的自定义接口地址。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">自定义接口<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.custom" placeholder="请输入自定义接口地址" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.customEndpointTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.customEndpoint') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.custom" :placeholder="t('serviceConfig.customEndpointPlaceholder')" @change="ensureConfiguredProviderPermission" /></el-col>
     </el-row>
     <el-row v-show="compute.showNewAPI" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="填写 New API 服务的接口地址。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">NewAPI接口<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.newApiUrl" placeholder="请输入您的New API接口地址" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.newApiEndpointTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.newApiEndpoint') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.newApiUrl" :placeholder="t('serviceConfig.newApiEndpointPlaceholder')" @change="ensureConfiguredProviderPermission" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showCustomModel" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="填写服务商支持的模型标识；选择自定义模型后，网页翻译会使用这里的值。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ service === 'doubao' ? '接入点' : '自定义模型' }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.customModel[service]" placeholder="例如：gemma:7b" /></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.customModelTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ service === 'doubao' ? t('serviceConfig.endpoint') : t('serviceConfig.customModel') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-input v-model="config.customModel[service]" :placeholder="t('serviceConfig.customModelPlaceholder')" /></el-col>
     </el-row>
 
     <el-row v-show="compute.showDeepseekApiType" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="选择 DeepSeek 接口使用的 API 格式。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">API 格式<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-select v-model="config.deepseekApiType" placeholder="请选择 API 格式"><el-option class="select-left" v-for="item in options.deepseekApiType" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.deepseekApiTypeTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.apiFormat') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-select v-model="config.deepseekApiType" :placeholder="t('serviceConfig.selectApiFormat')"><el-option class="select-left" v-for="item in options.deepseekApiType" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-col>
     </el-row>
     <el-row v-show="compute.showDeepseekThinkingMode" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="控制 DeepSeek 是否启用思考过程。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">思考模式<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-select v-model="config.deepseekThinkingMode" placeholder="请选择思考模式"><el-option class="select-left" v-for="item in options.deepseekThinkingMode" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.deepseekThinkingModeTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.thinkingMode') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12"><el-select v-model="config.deepseekThinkingMode" :placeholder="t('serviceConfig.selectThinkingMode')"><el-option class="select-left" v-for="item in options.deepseekThinkingMode" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-col>
     </el-row>
 
     <el-row v-show="compute.showCustomBody" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" content="填写要合并到翻译请求中的 JSON 参数对象。" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">自定义请求体<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
+      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.customBodyTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.customBody') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
       <el-col :span="12">
-        <el-input v-model="config.customBody[service]" :class="{ 'input-error': !isValidCustomBody(config.customBody[service]) }" placeholder='例如：{"thinking": {"type": "disabled"}}' />
-        <div v-if="!isValidCustomBody(config.customBody[service])" class="error-text">请输入合法的 JSON 对象，否则该配置将被忽略</div>
+        <el-input v-model="config.customBody[service]" :class="{ 'input-error': !isValidCustomBody(config.customBody[service]) }" :placeholder="t('serviceConfig.customBodyPlaceholder')" />
+        <div v-if="!isValidCustomBody(config.customBody[service])" class="error-text">{{ t('serviceConfig.customBodyInvalid') }}</div>
       </el-col>
     </el-row>
   </section>
@@ -182,11 +206,15 @@
 import { computed, ref, toRef, watch } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import type { Config } from '@/entrypoints/utils/model'
-import { options as optionConfig } from '@/entrypoints/utils/option'
+import { options as optionConfig, services } from '@/entrypoints/utils/option'
 import { isValidCustomBody } from '@/entrypoints/utils/custom-body'
 import browser from 'webextension-polyfill'
 import { requestConfigSave } from '@/entrypoints/utils/config'
 import { CONNECTION_TEST_MESSAGE, MINIMAX_ENDPOINTS } from '@/entrypoints/utils/constant'
+import { PROVIDER_NETWORK_CONSENT_MESSAGE, getNetworkConsentScopeId, type NetworkConsentMode } from '@/entrypoints/utils/providerConsent'
+import { getProviderDescriptor } from '@/entrypoints/utils/providerCapabilities'
+import {requestProviderHostPermission} from '@/entrypoints/utils/providerPermissions'
+import {useI18n} from 'vue-i18n'
 
 const props = defineProps<{
   config: Config
@@ -201,6 +229,52 @@ const service = toRef(props, 'service')
 const compute = toRef(props, 'compute')
 const options = toRef(props, 'options')
 const isValidAzureEndpoint = toRef(props, 'isValidAzureEndpoint')
+const networkConsentBusy = ref(false)
+const networkConsentMessage = ref('')
+const {t} = useI18n({useScope: 'global'})
+type ChromeAvailability = 'idle' | 'checking' | 'ready' | 'downloadable' | 'downloading' | 'unsupported' | 'after-detection'
+const chromeAvailability = ref<ChromeAvailability>('idle')
+const chromeAvailabilityBusy = computed(() => chromeAvailability.value === 'checking')
+const chromeAvailabilityLabel = computed(() => ({
+  idle: t('serviceConfig.chromeAvailabilityIdle'),
+  checking: t('serviceConfig.chromeAvailabilityChecking'),
+  ready: t('serviceConfig.chromeAvailabilityReady'),
+  downloadable: t('serviceConfig.chromeAvailabilityDownloadable'),
+  downloading: t('serviceConfig.chromeAvailabilityDownloading'),
+  unsupported: t('serviceConfig.chromeAvailabilityUnsupported'),
+  'after-detection': t('serviceConfig.chromeAvailabilityAfterDetection'),
+} as Record<ChromeAvailability, string>)[chromeAvailability.value])
+let chromeAvailabilityRequest = 0
+
+async function checkChromeAvailability(): Promise<void> {
+  if (service.value !== services.chromeTranslator) return
+  const requestId = ++chromeAvailabilityRequest
+  chromeAvailability.value = 'checking'
+  try {
+    const response = await browser.runtime.sendMessage({
+      type: 'provider.checkAvailability',
+      providerId: services.chromeTranslator,
+      from: config.value.from,
+      to: config.value.to,
+    }) as {success?: boolean; availability?: ChromeAvailability} | undefined
+    if (requestId !== chromeAvailabilityRequest) return
+    chromeAvailability.value = response?.success && response.availability
+      ? response.availability
+      : 'unsupported'
+  } catch {
+    if (requestId === chromeAvailabilityRequest) chromeAvailability.value = 'unsupported'
+  }
+}
+
+const providerDescriptor = computed(() => getProviderDescriptor(
+  service.value,
+  service.value === 'custom' ? config.value.custom : undefined,
+))
+const networkConsentRequired = computed(() => providerDescriptor.value.requiresNetworkConsent)
+const serviceLabel = computed(() => {
+  const serviceOption = options.value.services.find((item) => item.value === service.value)
+  return serviceOption?.label || service.value
+})
 
 const minimaxKeyKind = computed(() => {
   const token = config.value.token[service.value]?.trim() || ''
@@ -210,13 +284,13 @@ const minimaxKeyKind = computed(() => {
 const minimaxKeyMismatch = computed(() => {
   if (minimaxKeyKind.value === 'empty') return ''
   if (config.value.minimaxBillingPlan === 'token-plan' && minimaxKeyKind.value !== 'token-plan') {
-    return '当前选择的是 Token Plan，但 Key 不是 sk-cp- 开头；请确认 Key 来源，Token Plan 订阅必须有效。'
+    return t('serviceConfig.minimaxTokenPlanMismatch')
   }
   if (config.value.minimaxBillingPlan === 'payg' && minimaxKeyKind.value === 'token-plan') {
-    return '当前选择的是按量付费，但检测到 sk-cp- Token Plan Key；两类 Key 不能互换，请切换计费方式或更换 Key。'
+    return t('serviceConfig.minimaxPaygMismatch')
   }
   return config.value.minimaxBillingPlan === 'token-plan'
-    ? '当前使用 Token Plan Key；请确认 Token Plan 订阅有效。'
+    ? t('serviceConfig.minimaxTokenPlanNote')
     : ''
 })
 
@@ -237,14 +311,28 @@ function resetConnectionTest(): void {
   connectionTestMessage.value = ''
 }
 
+async function ensureConfiguredProviderPermission(): Promise<void> {
+  try {
+    const permissionGranted = await requestProviderHostPermission(service.value, config.value)
+    if (permissionGranted) return
+    connectionTestState.value = 'error'
+    connectionTestMessage.value = t('serviceConfig.providerPermissionDenied')
+  } catch (error) {
+    connectionTestState.value = 'error'
+    connectionTestMessage.value = error instanceof Error ? error.message : t('serviceConfig.providerPermissionDenied')
+  }
+}
+
 async function testConnection(): Promise<void> {
   if (connectionTestBusy.value) return
 
   connectionTestBusy.value = true
   connectionTestState.value = 'testing'
-  connectionTestMessage.value = '正在保存当前配置并请求服务…'
+  connectionTestMessage.value = t('serviceConfig.connectionTestSaving')
 
   try {
+    const permissionGranted = await requestProviderHostPermission(service.value, config.value)
+    if (!permissionGranted) throw new Error(t('serviceConfig.providerPermissionDenied'))
     await requestConfigSave(config.value, browser.runtime.sendMessage.bind(browser.runtime))
     const response = await browser.runtime.sendMessage({
       type: CONNECTION_TEST_MESSAGE,
@@ -252,11 +340,11 @@ async function testConnection(): Promise<void> {
     }) as {success?: boolean; durationMs?: number; error?: string} | undefined
 
     if (!response?.success) {
-      throw new Error(response?.error || '连接测试失败')
+      throw new Error(response?.error || t('serviceConfig.connectionTestFailed'))
     }
 
     connectionTestState.value = 'success'
-    connectionTestMessage.value = `已完成真实翻译请求${typeof response.durationMs === 'number' ? `（${response.durationMs} ms）` : ''}。`
+    connectionTestMessage.value = `${t('serviceConfig.connectionTestCompleted')}${typeof response.durationMs === 'number' ? ` (${response.durationMs} ms)` : ''}${t('serviceConfig.period')}`
   } catch (error) {
     connectionTestState.value = 'error'
     connectionTestMessage.value = error instanceof Error ? error.message : String(error)
@@ -265,7 +353,42 @@ async function testConnection(): Promise<void> {
   }
 }
 
-watch(service, resetConnectionTest)
+async function grantNetworkConsent(mode: NetworkConsentMode): Promise<void> {
+  if (networkConsentBusy.value || !networkConsentRequired.value) return
+  networkConsentBusy.value = true
+  networkConsentMessage.value = ''
+  try {
+    const permissionGranted = await requestProviderHostPermission(service.value, config.value)
+    if (!permissionGranted) throw new Error(t('serviceConfig.networkPermissionDenied'))
+    const response = await browser.runtime.sendMessage({
+      type: PROVIDER_NETWORK_CONSENT_MESSAGE,
+      providerId: service.value,
+      mode,
+      consentScopeId: getNetworkConsentScopeId(),
+    }) as {success?: boolean; error?: string} | undefined
+    if (!response?.success) throw new Error(response?.error || t('serviceConfig.networkConsentFailed'))
+    networkConsentMessage.value = mode === 'once'
+      ? t('serviceConfig.networkConsentOnceGranted')
+      : t('serviceConfig.networkConsentRemembered')
+  } catch (error) {
+    networkConsentMessage.value = error instanceof Error ? error.message : t('serviceConfig.networkConsentFailed')
+  } finally {
+    networkConsentBusy.value = false
+  }
+}
+
+watch(service, () => {
+  resetConnectionTest()
+  networkConsentMessage.value = ''
+})
+
+watch(
+  () => [service.value, config.value.from, config.value.to],
+  () => {
+    if (service.value === services.chromeTranslator) void checkChromeAvailability()
+  },
+  {immediate: true},
+)
 </script>
 
 <style scoped>
@@ -283,6 +406,61 @@ watch(service, resetConnectionTest)
   line-height: 1.5;
   animation: credential-warning-breathe 2.8s ease-in-out infinite;
 }
+
+.local-provider-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 12px 13px;
+  border: 1px solid #b8e0cb;
+  border-radius: 10px;
+  color: #276b48;
+  background: #effaf3;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.local-provider-status p { margin: 3px 0 0; }
+.local-provider-status button {
+  flex: none;
+  border: 1px solid #8fc8aa;
+  border-radius: 7px;
+  padding: 6px 9px;
+  color: #276b48;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.local-provider-status button:disabled { cursor: wait; opacity: .65; }
+
+.network-consent {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 13px;
+  border: 1px solid #f3d19e;
+  border-radius: 10px;
+  color: #7a4c00;
+  background: #fff8eb;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.network-consent p { margin: 3px 0 0; }
+.network-consent-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.network-consent-actions button {
+  border: 1px solid #d9a441;
+  border-radius: 7px;
+  padding: 6px 9px;
+  color: #7a4c00;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.network-consent-actions button.is-primary { color: #fff; background: #b87816; }
+.network-consent-actions button:disabled { cursor: wait; opacity: .65; }
+.network-consent small { color: #8a5a00; }
 
 .subsection-heading {
   display: flex;

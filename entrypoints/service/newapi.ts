@@ -34,7 +34,7 @@ async function newapi(message: any) {
         });
 
         if (!resp.ok) {
-            throw new Error(`翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+            throw new Error(`翻译失败: ${resp.status} ${resp.statusText}`);
         }
 
         const result = await resp.json();
@@ -45,7 +45,7 @@ async function newapi(message: any) {
 
         throw new Error('翻译失败: 上游未返回内容');
     } catch (error) {
-        console.error('API调用失败:', error);
+        console.error('API调用失败');
         throw error;
     }
 }

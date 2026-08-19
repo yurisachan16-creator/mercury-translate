@@ -23,14 +23,12 @@ async function coze( message: any) {
     if (resp.ok) {
         let result = await resp.json();
         if (result.code === 0 && result.msg === "success") {
-            console.log(result.messages[0])
             return result.messages[0].content;
         } else {
             throw new Error(`请求失败: ${result.msg}`);
         }
     } else {
-        console.log(resp);
-        throw new Error(`请求失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`);
+        throw new Error(`请求失败: ${resp.status} ${resp.statusText}`);
     }
 }
 

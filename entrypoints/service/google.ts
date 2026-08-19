@@ -1,4 +1,5 @@
 import {config} from "@/entrypoints/utils/config";
+import {getProviderLanguageCode} from '@/entrypoints/utils/languageRegistry';
 
 const GOOGLE_TRANSLATE_RPC_ID = 'MkEWBc';
 const GOOGLE_TRANSLATE_BATCH_URLS = [
@@ -8,7 +9,6 @@ const GOOGLE_TRANSLATE_BATCH_URLS = [
 const GOOGLE_TRANSLATE_LEGACY_URL = 'https://translate.googleapis.com/translate_a/single';
 const GOOGLE_TRANSLATE_TOTAL_TIMEOUT_MS = 15_000;
 const GOOGLE_TRANSLATE_ATTEMPT_TIMEOUT_MS = 8_000;
-const GOOGLE_ERROR_BODY_PREVIEW_LENGTH = 200;
 
 type GoogleProvider = {
     name: string;
@@ -106,25 +106,12 @@ export function parseGoogleLegacyResponse(responseBody: string): string {
     return translatedText;
 }
 
-function formatResponseBody(responseBody: string): string {
-    if (/<!doctype html|<html[\s>]/i.test(responseBody)) {
-        return '收到 HTML 页面（可能触发了 CAPTCHA）';
-    }
-
-    const compactBody = responseBody.replace(/\s+/g, ' ').trim();
-    if (compactBody.length === 0) {
-        return '';
-    }
-    return compactBody.slice(0, GOOGLE_ERROR_BODY_PREVIEW_LENGTH);
-}
-
 function getErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-function createGoogleParseError(error: unknown, responseBody: string): Error {
-    const responsePreview = formatResponseBody(responseBody) || '空响应';
-    return new Error(`${getErrorMessage(error)}，响应摘要: ${responsePreview}`);
+function createGoogleParseError(error: unknown): Error {
+    return new Error(`${getErrorMessage(error)}，响应解析失败`);
 }
 
 async function fetchGoogleResponse(
@@ -139,10 +126,7 @@ async function fetchGoogleResponse(
         const response = await fetch(url, {...init, signal: controller.signal});
         const responseBody = await response.text();
         if (!response.ok) {
-            const bodyPreview = formatResponseBody(responseBody);
-            throw new Error(
-                `HTTP ${response.status} ${response.statusText}${bodyPreview ? `，响应: ${bodyPreview}` : ''}`,
-            );
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
         }
         return {responseBody};
     } catch (error) {
@@ -174,7 +158,7 @@ async function translateGoogleBatch(
     try {
         return parseGoogleBatchResponse(responseBody);
     } catch (error) {
-        throw createGoogleParseError(error, responseBody);
+        throw createGoogleParseError(error);
     }
 }
 
@@ -197,7 +181,7 @@ async function translateGoogleLegacy(
     try {
         return parseGoogleLegacyResponse(responseBody);
     } catch (error) {
-        throw createGoogleParseError(error, responseBody);
+        throw createGoogleParseError(error);
     }
 }
 
@@ -247,11 +231,15 @@ export async function translateGoogleText(
     throw new Error(`谷歌翻译所有匿名接口均失败：${failureSummary}`);
 }
 
-async function google(message: {origin: string}) {
+async function google(message: {origin: string; from?: string; to?: string}) {
     if (typeof message.origin !== 'string') {
         throw new Error('谷歌翻译仅支持单条文本');
     }
-    return translateGoogleText(message.origin, config.from, config.to);
+    return translateGoogleText(
+        message.origin,
+        getProviderLanguageCode(typeof message.from === 'string' ? message.from : config.from, 'google'),
+        getProviderLanguageCode(typeof message.to === 'string' ? message.to : config.to, 'google'),
+    );
 }
 
 export default google;

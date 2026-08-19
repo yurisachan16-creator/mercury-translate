@@ -1,8 +1,8 @@
-# 认识 FluentRead
+# 认识 Mercury Translate
 
-FluentRead 是一个面向真实阅读场景的浏览器翻译扩展。它不要求你离开当前页面，也不把原文替换掉，而是把译文以双语段落、选区气泡或图片文本的方式放回阅读现场。
+Mercury Translate 是一个面向真实阅读场景的浏览器翻译扩展。它不要求你离开当前页面，也不把原文替换掉，而是把译文以双语段落、选区气泡或图片文本的方式放回阅读现场。
 
-<img class="doc-screenshot" src="/screenshots/translation.png" alt="FluentRead bilingual translation in a real article" />
+<img class="doc-screenshot" src="/screenshots/translation.png" alt="Mercury Translate bilingual translation in a real article" />
 
 ## 它适合什么场景？
 
@@ -11,7 +11,7 @@ FluentRead 是一个面向真实阅读场景的浏览器翻译扩展。它不要
 - 需要在原文与译文之间来回切换，并保留原页面的排版。
 - 希望使用自己的 API、AI 服务或本地模型，而不是被固定服务绑定。
 
-## FluentRead 的工作方式
+## Mercury Translate 的工作方式
 
 1. 在当前页面中识别适合翻译的文本节点。
 2. 按你选择的服务和目标语言请求翻译。
@@ -36,4 +36,4 @@ FluentRead 是一个面向真实阅读场景的浏览器翻译扩展。它不要
 
 ## 关于隐私
 
-FluentRead 不托管你的翻译账号。翻译请求由你在设置中启用的服务处理；使用云端服务时，选中的文本或页面内容会发送到对应服务。若不希望内容离开本机，可以使用本地 Ollama（前提是本机已运行兼容模型）。
+Mercury Translate 不托管你的翻译账号。翻译请求由你在设置中启用的服务处理；使用云端服务时，选中的文本或页面内容会发送到对应服务。若不希望内容离开本机，可以使用本地 Ollama（前提是本机已运行兼容模型）。

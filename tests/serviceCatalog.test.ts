@@ -87,6 +87,8 @@ describe('service catalog helpers', () => {
     expect(getSelectedModelLabel('openai', { openai: customModelString }, { openai: 'local-model' })).toBe('local-model')
     expect(getSelectedModelLabel('openai', { openai: customModelString }, {})).toBe(customModelString)
     expect(getSelectedModelLabel('openai', {}, {})).toBe('未选择模型')
+    expect(getSelectedModelLabel('openai', { openai: customModelString }, {}, key => key === 'serviceConfig.customModel' ? 'Custom model' : key)).toBe('Custom model')
+    expect(getSelectedModelLabel('openai', {}, {}, key => key === 'serviceCatalog.noModelSelected' ? 'No model selected' : key)).toBe('No model selected')
   })
 
   it('为所有需要模型的 AI 服务提供自定义模型入口', () => {

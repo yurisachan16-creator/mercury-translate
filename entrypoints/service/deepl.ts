@@ -29,7 +29,6 @@ async function deepl(message: any) {
         let result = await resp.json();
         return result.translations[0].text
     } else {
-        console.log(resp)
         throw new Error(`翻译失败: ${resp.status} ${resp.statusText} 请检查 token 是否正确`);
     }
 }

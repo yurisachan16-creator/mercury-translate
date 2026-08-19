@@ -1,0 +1,11 @@
+Mercury Translate 0.1.0
+
+Mercury Translate is an independent, unofficial fork of FluentRead
+(https://github.com/FluentRead/FluentRead), initially based on commit
+f91543c6b6b76f3c5d6343b47a82e431acfa648a. It is not endorsed by or affiliated
+with the FluentRead maintainers.
+
+The combined work is distributed under GPL-3.0. Upstream copyright and license
+notices are retained. See LICENSE and THIRD_PARTY_NOTICES.md for complete terms
+and notices for PDF.js, Tesseract.js, tessdata_fast, Vue, WXT, and other
+dependencies.

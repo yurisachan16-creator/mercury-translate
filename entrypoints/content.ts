@@ -11,7 +11,7 @@ import { config, configReady } from "@/entrypoints/utils/config";
 import { mountFloatingBall, unmountFloatingBall } from "@/entrypoints/utils/floatingBall";
 import { mountSelectionTranslator, unmountSelectionTranslator } from "@/entrypoints/utils/selectionTranslator";
 import { mountAreaTranslator, unmountAreaTranslator } from "@/entrypoints/utils/areaTranslator";
-import { cancelAllTranslations } from "@/entrypoints/utils/translateApi";
+import { cancelAllTranslations, translateText } from "@/entrypoints/utils/translateApi";
 import { mountNewApiComponent, unmountNewApiComponent } from "@/entrypoints/utils/newApi";
 import { mountImageTranslator, unmountImageTranslator } from "@/entrypoints/utils/imageTranslation";
 import {
@@ -26,10 +26,24 @@ import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import { createShadowRootUi, type ShadowRootContentScriptUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { mountVideoSubtitleTranslation } from './main/videoSubtitle';
 import {resetPageTranslationContextCache} from '@/entrypoints/utils/pageContext';
+import { createTranslator, detectUiLocale, type MessagePath } from '@/entrypoints/i18n/runtime';
+import { watchStoredUiLocalePreference } from '@/entrypoints/i18n/preferences';
 
 let contentScriptContext: ContentScriptContext | null = null;
 let inputTooltipUi: ShadowRootContentScriptUi<HTMLElement> | null = null;
 let unmountVideoSubtitleTranslation: (() => void) | null = null;
+let contentTranslate = createTranslator(detectUiLocale());
+
+function tContent(path: MessagePath): string {
+    return contentTranslate(path);
+}
+
+function installContentLocaleObserver(ctx: ContentScriptContext): void {
+    const unwatch = watchStoredUiLocalePreference((locale) => {
+        contentTranslate = createTranslator(locale);
+    });
+    ctx.onInvalidated(unwatch);
+}
 
 function installPageStyles(ctx: ContentScriptContext) {
     const existing = document.getElementById('fluent-read-page-styles');
@@ -135,6 +149,7 @@ export default defineContentScript({
     async main(ctx) {
         contentScriptContext = ctx;
         installPageStyles(ctx);
+        installContentLocaleObserver(ctx);
         await configReady; // 等待配置加载完成
 
         const pageEventController = new AbortController();
@@ -541,7 +556,7 @@ function setupFloatingBallHotkey(signal: AbortSignal) {
     };
     
     if (isDev) {
-        console.log(`[FluentRead] 设置悬浮球快捷键: ${config.floatingBallHotkey}, 系统: ${isMac ? 'macOS' : '其他'}`);
+        console.log(`[Mercury Translate] 设置悬浮球快捷键: ${config.floatingBallHotkey}, 系统: ${isMac ? 'macOS' : '其他'}`);
     }
     
     // 监听按键按下事件
@@ -629,7 +644,7 @@ function setupFloatingBallHotkey(signal: AbortSignal) {
                 const activeHotkey = config.floatingBallHotkey === 'custom' 
                     ? config.customFloatingBallHotkey 
                     : config.floatingBallHotkey;
-                console.log(`[FluentRead] 触发悬浮球翻译，快捷键: ${activeHotkey}`);
+                console.log(`[Mercury Translate] 触发悬浮球翻译，快捷键: ${activeHotkey}`);
             }
         }
     }, { signal, capture: true });
@@ -931,28 +946,14 @@ function addInputBoxAnimation(element: HTMLElement, animationType: 'translating'
     }
 }
 
-/**
- * 专门用于输入框翻译的微软翻译函数（不使用缓存）
- * 通过background脚本调用，避免Firefox的CORS问题
- */
-async function translateWithMicrosoft(text: string, targetLang: string): Promise<string> {
-    try {
-        // 发送消息给background脚本进行翻译
-        const result = await browser.runtime.sendMessage({
-            type: 'inputBoxTranslation',
-            text: text,
-            targetLang: targetLang
-        });
-        
-        if (result && result.success) {
-            return result.translatedText;
-        } else {
-            throw new Error(result?.error || '微软翻译失败');
-        }
-    } catch (error) {
-        console.error('微软翻译请求失败:', error);
-        throw error;
-    }
+async function translateInputBoxText(text: string, targetLanguage: string): Promise<string> {
+    return translateText(text, document.title, {
+        useCache: false,
+        pageContext: '',
+        sourceLanguage: 'auto',
+        targetLanguage,
+        maxRetries: 1,
+    });
 }
 
 /**
@@ -975,11 +976,10 @@ async function handleInputBoxTranslation(element: HTMLElement): Promise<void> {
         
         // 显示翻译中的动画和提示
         addInputBoxAnimation(element, 'translating');
-        await createTranslationTooltip(element, '微软翻译中', 'translating');
+        await createTranslationTooltip(element, tContent('main.inputBoxTranslating'), 'translating');
         
         try {
-            // 直接调用微软翻译API，不使用缓存
-            const translatedText = await translateWithMicrosoft(cleanedText, config.inputBoxTranslationTarget);
+            const translatedText = await translateInputBoxText(cleanedText, config.inputBoxTranslationTarget);
             
             if (translatedText && translatedText !== cleanedText) {
                 // 移除翻译中的动画
@@ -991,28 +991,28 @@ async function handleInputBoxTranslation(element: HTMLElement): Promise<void> {
                 // 显示成功动画和提示
                 addInputBoxAnimation(element, 'success');
                 removeExistingTooltip();
-                await createTranslationTooltip(element, '翻译成功', 'success');
+                await createTranslationTooltip(element, tContent('main.inputBoxTranslated'), 'success');
             } else {
                 // 翻译结果与原文相同或为空
                 element.classList.remove('fluent-input-translating');
                 addInputBoxAnimation(element, 'error');
                 removeExistingTooltip();
-                await createTranslationTooltip(element, '内容无需翻译', 'error');
+                await createTranslationTooltip(element, tContent('main.inputBoxUnchanged'), 'error');
             }
         } catch (translationError) {
             // 翻译失败
             element.classList.remove('fluent-input-translating');
             addInputBoxAnimation(element, 'error');
             removeExistingTooltip();
-            await createTranslationTooltip(element, '微软翻译失败', 'error');
-            console.error('微软翻译失败:', translationError);
+            await createTranslationTooltip(element, tContent('main.inputBoxFailed'), 'error');
+            console.error('[Mercury Translate] input box translation failed:', translationError);
         }
         
         // 自动隐藏提示
         setTimeout(() => removeExistingTooltip(), 2500);
         
     } catch (error) {
-        console.error('输入框翻译失败:', error);
+        console.error('[Mercury Translate] input box translation failed:', error);
         
         // 移除翻译中的动画
         element.classList.remove('fluent-input-translating');
@@ -1020,7 +1020,7 @@ async function handleInputBoxTranslation(element: HTMLElement): Promise<void> {
         // 显示错误动画和提示
         addInputBoxAnimation(element, 'error');
         removeExistingTooltip();
-        await createTranslationTooltip(element, '翻译服务暂时不可用', 'error');
+        await createTranslationTooltip(element, tContent('main.inputBoxUnavailable'), 'error');
         
         // 自动隐藏错误提示
         setTimeout(() => removeExistingTooltip(), 3000);

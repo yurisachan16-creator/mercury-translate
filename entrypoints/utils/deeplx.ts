@@ -49,11 +49,11 @@ export function getDeepLXEndpoints(configuredURL: unknown, proxyURL: unknown, to
   const proxyEndpoints = parseDeepLXEndpoints(proxyURL)
   if (proxyEndpoints.length > 0) {
     const resolvedProxyEndpoints = proxyEndpoints.map((endpoint) => resolveDeepLXEndpoint(endpoint, token)).filter((endpoint): endpoint is string => endpoint !== null)
-    return resolvedProxyEndpoints.length > 0 ? resolvedProxyEndpoints : [DEFAULT_DEEPLX_ENDPOINT]
+    return resolvedProxyEndpoints
   }
 
   const configuredEndpoints = parseDeepLXEndpoints(configuredURL)
-  const endpoints = configuredEndpoints.length > 0 ? configuredEndpoints : [DEFAULT_DEEPLX_ENDPOINT]
-  const resolvedEndpoints = endpoints.map((endpoint) => resolveDeepLXEndpoint(endpoint, token)).filter((endpoint): endpoint is string => endpoint !== null)
-  return resolvedEndpoints.length > 0 ? resolvedEndpoints : [DEFAULT_DEEPLX_ENDPOINT]
+  return configuredEndpoints
+    .map((endpoint) => resolveDeepLXEndpoint(endpoint, token))
+    .filter((endpoint): endpoint is string => endpoint !== null)
 }

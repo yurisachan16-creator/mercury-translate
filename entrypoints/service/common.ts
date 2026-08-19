@@ -14,8 +14,7 @@ async function common(message: any) {
         appendOptionalBearer(headers, config.token[service]);
 
         if(service === services.openrouter){
-            headers.append('HTTP-Referer', 'https://fluent.thinkstu.com');
-            headers.append('X-Title', 'FluentRead');
+            headers.append('X-Title', 'Mercury Translate');
         }
                 
         const url = config.proxy[service]
@@ -34,14 +33,14 @@ async function common(message: any) {
         if (!resp.ok) {
             throw new Error(formatServiceError(
                 service,
-                `翻译失败: ${resp.status} ${resp.statusText} body: ${await resp.text()}`,
+                `翻译失败: ${resp.status} ${resp.statusText}`,
             ));
         }
 
         const result = await resp.json();
         return contentPostHandler(result.choices[0].message.content);
     } catch (error) {
-        console.error('API调用失败:', error);
+        console.error('API调用失败');
         throw error;
     }
 }

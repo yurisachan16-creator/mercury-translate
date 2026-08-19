@@ -4,6 +4,7 @@ import {
   createShadowRootUi,
   type ShadowRootContentScriptUi,
 } from 'wxt/utils/content-script-ui/shadow-root';
+import { bindMercuryI18nLocale, createMercuryI18n } from '@/entrypoints/i18n/vue';
 
 export interface VueShadowMount {
   app: VueApp;
@@ -56,6 +57,8 @@ export async function createVueShadowUi(
   ctx: ContentScriptContext,
   options: VueShadowUiOptions,
 ): Promise<ShadowRootContentScriptUi<VueShadowMount>> {
+  const i18n = await createMercuryI18n();
+  const stopLocaleSync = bindMercuryI18nLocale(i18n);
   const ui = await createShadowRootUi<VueShadowMount>(ctx, {
     name: options.name,
     position: 'overlay',
@@ -67,10 +70,12 @@ export async function createVueShadowUi(
     css: SHADOW_FOUNDATION,
     onMount(container) {
       const app = createApp(options.component, options.props ?? {});
+      app.use(i18n);
       const instance = app.mount(container);
       return { app, instance };
     },
     onRemove(mounted) {
+      stopLocaleSync();
       mounted?.app.unmount();
     },
   });

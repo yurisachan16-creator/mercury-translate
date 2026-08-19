@@ -1,62 +1,37 @@
 # 安装与第一次翻译
 
-下面的流程适用于 FluentRead 0.0.30。安装完成后，不需要注册账号即可开始使用。
+Mercury Translate 0.1.0 面向 Chrome 桌面版 151 及更高版本，通过 GitHub Release 发布。不需要注册账号。
 
 ## 安装扩展
 
-从浏览器商店安装是最省事的方式：
+1. 从项目 GitHub Releases 下载 `mercury-translate-v0.1.0-chrome.zip`。
+2. 校对同一 Release 中 `SHA256SUMS` 的扩展包摘要，然后解压到一个固定目录。
+3. 打开 `chrome://extensions`，启用“开发者模式”。
+4. 选择“加载已解压的扩展程序”，指向解压后的目录。
+5. 把 Mercury Translate 固定到工具栏。
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/djnlaiohfaaifbibleebjggkghlmcpcj?hl=zh-CN)
-- [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/kakgmllfpjldjhcnkghpplmlbnmcoflp?hl=zh-CN)
-- [Firefox Add-ons](https://addons.mozilla.org/zh-CN/firefox/addon/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB/)
+更新时使用新版本替换同一目录中的文件，再在扩展页点击“重新加载”。发布包使用稳定的公开扩展密钥，扩展 ID 和本地设置会保持不变。
 
-安装后，建议把 FluentRead 固定到浏览器工具栏，方便随时打开控制面板。
+## 第一次网页翻译
 
-## 三分钟完成第一次翻译
+1. 打开包含普通段落的网页。浏览器内部页、扩展商店和部分受保护编辑器不允许扩展注入。
+2. 打开 Mercury Translate 弹窗，选择源语言和目标语言。
+3. 保留默认的 Chrome Translator；首次使用某语言组合时，Chrome 可能需要下载本地模型。
+4. 点击“翻译页面”。译文会按可见内容分批出现在原文附近。
 
-### 1. 打开一篇可阅读的网页
+如果当前语言组合不支持本地翻译，扩展会请你选择是否使用 Google、Microsoft/Bing 或自己的 API；取消时不会发送文本。
 
-选择一篇包含普通段落的文章或文档。浏览器内部页面、扩展商店、部分登录页和受保护的编辑器通常不允许扩展注入内容，建议先用普通网页测试。
+## 打开 PDF
 
-### 2. 打开 FluentRead 弹窗
+安装后直接在 Chrome 中打开 PDF 链接或本地 PDF。Mercury Translate 会保留地址栏中的原始地址，并显示原页/译文双栏阅读器。详见 [PDF 双语阅读](/guide/pdf-translation)。
 
-选择源语言和目标语言，然后确认当前使用的翻译服务。第一次使用可以先保留默认设置。
+## 从源码构建
 
-<img class="doc-screenshot" src="/screenshots/popup.png" alt="FluentRead popup controls" />
+```bash
+pnpm install --frozen-lockfile
+pnpm compile
+pnpm test
+pnpm build
+```
 
-### 3. 点击“翻译页面”
-
-FluentRead 会按页面结构处理可翻译文本，并在原文附近插入译文。页面较长时，翻译可能分批出现；请保持当前标签页打开。
-
-<img class="doc-screenshot" src="/screenshots/translation.png" alt="FluentRead translating an article" />
-
-### 4. 恢复或重新翻译
-
-翻译完成后，你可以：
-
-- 点击“恢复原文”，移除当前页面中的译文。
-- 修改目标语言或翻译服务，再次执行翻译。
-- 只选中一段文字，使用选区翻译获取局部结果。
-- 在弹窗“划词翻译”中进入“圈选翻译”并开启后，按住 `Shift + Z` 拖拽图片或不可选文字区域。
-
-## 如果点击后没有结果
-
-按下面顺序检查：
-
-1. 当前页面是否允许扩展注入内容。
-2. 弹窗中的翻译服务是否已启用并配置完整。
-3. 是否已经存在翻译结果；此时可以先恢复，再重新翻译。
-4. 打开设置确认目标语言和快捷键没有冲突。
-
-仍然无法使用时，请查看[常见问题](/guide/faq)，并在 GitHub Issue 中附上浏览器、网页类型和控制台错误，不要直接粘贴 API 密钥。
-
-## 手动安装开发版本
-
-如果你需要测试 GitHub 上的最新构建：
-
-1. 在仓库的 Releases 或 Actions 中下载对应浏览器的构建产物。
-2. 打开浏览器的扩展管理页并开启“开发者模式”。
-3. 选择“加载已解压的扩展”，指向解压后的扩展目录。
-4. 测试完成后，回到扩展管理页移除该开发版本，避免与商店版本重复注入。
-
-开发者需要从源码构建时，请参考仓库 README 中的开发章节。
+在 `chrome://extensions` 中加载 `.output/chrome-mv3`。

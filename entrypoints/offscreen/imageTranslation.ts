@@ -2,12 +2,21 @@ import type { OcrLine } from '@/entrypoints/utils/imageTranslationCore';
 import { areaRectToImageCrop, type AreaTranslationSelection } from '@/entrypoints/utils/areaTranslationCore';
 import { inpaintTextRegions } from '@/entrypoints/utils/imageInpainting';
 import { recognizeImage } from './imageOcr';
+import {
+    isNetworkConsentRequiredOutcome,
+    type NetworkConsentRequiredOutcome,
+} from '@/entrypoints/utils/providerConsent';
 
 export type OffscreenImageTranslationLine = OcrLine & { backgroundColor: string };
 
 export interface OffscreenImageTranslationResult {
     image: string;
     lines: OffscreenImageTranslationLine[];
+}
+
+export interface OffscreenImageTranslationOptions {
+    serviceOverride?: string;
+    consentScopeId?: string;
 }
 
 function loadImage(dataUrl: string): Promise<HTMLImageElement> {
@@ -111,12 +120,18 @@ function drawTranslatedText(
     });
 }
 
-async function translateTexts(texts: string[], title: string): Promise<string[]> {
+async function translateTexts(
+    texts: string[],
+    title: string,
+    options: OffscreenImageTranslationOptions = {},
+): Promise<string[] | NetworkConsentRequiredOutcome> {
     const response = await new Promise<any>((resolve, reject) => {
         chrome.runtime.sendMessage({
             type: 'fluentReadImageTranslateTexts',
             texts,
             title,
+            serviceOverride: options.serviceOverride,
+            consentScopeId: options.consentScopeId,
         }, result => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
@@ -125,6 +140,7 @@ async function translateTexts(texts: string[], title: string): Promise<string[]>
             }
         });
     });
+    if (isNetworkConsentRequiredOutcome(response)) return response;
     if (!response?.success || !Array.isArray(response.translations)) {
         throw new Error(response?.error || '图片文字翻译失败');
     }
@@ -205,10 +221,12 @@ export async function translateImageInOffscreen(
     image: string,
     sourceLanguage: string,
     title: string,
-): Promise<OffscreenImageTranslationResult> {
+    options: OffscreenImageTranslationOptions = {},
+): Promise<OffscreenImageTranslationResult | NetworkConsentRequiredOutcome> {
     const lines = await recognizeImage(image, sourceLanguage);
     if (lines.length === 0) throw new Error('没有识别到图片文字');
-    const translations = await translateTexts(lines.map(line => line.text), title);
+    const translations = await translateTexts(lines.map(line => line.text), title, options);
+    if (isNetworkConsentRequiredOutcome(translations)) return translations;
     return prepareTranslatedImage(image, lines, translations);
 }
 
@@ -217,7 +235,8 @@ export async function translateAreaInOffscreen(
     sourceLanguage: string,
     title: string,
     selection: AreaTranslationSelection,
-): Promise<OffscreenImageTranslationResult> {
+    options: OffscreenImageTranslationOptions = {},
+): Promise<OffscreenImageTranslationResult | NetworkConsentRequiredOutcome> {
     const croppedImage = await cropImage(image, selection);
-    return translateImageInOffscreen(croppedImage, sourceLanguage, title);
+    return translateImageInOffscreen(croppedImage, sourceLanguage, title, options);
 }

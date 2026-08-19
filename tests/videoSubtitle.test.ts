@@ -72,7 +72,9 @@ describe('YouTube 视频字幕识别', () => {
         expect(normalizeVideoSubtitleDisplayMode('translation-only')).toBe('translation-only');
         expect(normalizeVideoSubtitleDisplayMode('original-only')).toBe('original-only');
         expect(normalizeVideoSubtitleDisplayMode('unknown')).toBe('bilingual');
-        expect(getVideoServiceLabel('microsoft')).toBe('微软翻译');
+        expect(getVideoServiceLabel('microsoft', 'en')).toBe('Microsoft Translator (online)');
+        expect(getVideoServiceLabel('microsoft', 'zh-CN')).toBe('微软翻译（联网）');
+        expect(getVideoServiceLabel('microsoft', 'zh-TW')).toBe('微軟翻譯（聯網）');
         expect(getVideoServiceLabel('custom-service')).toBe('custom-service');
         expect(getVideoPretranslationWindowMs('microsoft')).toBe(10_000);
         expect(getVideoPretranslationWindowMs('openai')).toBe(30_000);
