@@ -101,7 +101,7 @@
       "verification_hint": "record local commands here before implementation"
     },
     {
-      "path": "public/CLAUDE.md",
+      "path": ".ai/context/contracts/public.CLAUDE.md",
       "priority": "high",
       "char_budget": 1000,
       "purpose": "capability-contract",
@@ -116,7 +116,7 @@
       "verification_hint": "record local commands here before implementation"
     },
     {
-      "path": "public/AGENTS.md",
+      "path": ".ai/context/contracts/public.AGENTS.md",
       "priority": "high",
       "char_budget": 1000,
       "purpose": "capability-contract",

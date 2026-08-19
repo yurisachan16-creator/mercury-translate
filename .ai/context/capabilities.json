@@ -63,8 +63,8 @@
         "public"
       ],
       "contract_files": {
-        "agents": "public/AGENTS.md",
-        "claude": "public/CLAUDE.md"
+        "agents": ".ai/context/contracts/public.AGENTS.md",
+        "claude": ".ai/context/contracts/public.CLAUDE.md"
       },
       "architecture_module": "docs/architecture/modules/assets/extension-assets.md",
       "workstream_dir": "tasks/workstreams/assets/extension-assets",

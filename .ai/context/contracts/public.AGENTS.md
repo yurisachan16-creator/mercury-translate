@@ -1,7 +1,6 @@
-# Functional Block Agent Context
+# Extension Assets Agent Context
 
-Keep this file focused on the local contract for this primary functional block.
-
+Keep this file focused on the local contract for packaged extension assets.
 
 <!-- BEGIN ARCHITECTURE CONTRACT -->
 ## Architecture Contract
@@ -16,13 +15,13 @@ Keep this file focused on the local contract for this primary functional block.
 - Last changed path: `public`
 - Severity: medium
 - Change type: capability-config
-- Module responsibility: Keep this block aligned with the local boundary described by surrounding human-owned context.
+- Module responsibility: Keep packaged extension assets aligned with the release and licensing contract.
 - Entrypoints: `public`
-- Allowed dependencies: Follow root `AGENTS.md` / `CLAUDE.md` and this local contract.
-- Forbidden dependencies: Do not cross sibling app/service/package boundaries without an architecture snapshot or explicit plan.
+- Allowed dependencies: Follow root `AGENTS.md` and this local contract.
+- Forbidden dependencies: Do not put agent instructions, secrets, build output, or unlicensed artifacts in the packaged asset tree.
 - Runtime path: `public`
 - LSP/tooling profile: `typescript-lsp`
-- Verification: Use root required checks plus local commands recorded in this capability contract.
+- Verification: `pnpm build` and inspect the built extension file list.
 - Latest snapshot: `(none yet)`
 - Semantic diagram source: `docs/architecture/modules/assets/extension-assets.md`
 - Pending architecture request: `(none)`
