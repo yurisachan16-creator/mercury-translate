@@ -519,6 +519,7 @@ export function getLocalizedOptions(translate: OptionTranslator): typeof options
         [services.microsoft]: 'option.microsoftOnline',
         [services.google]: 'option.googleOnline',
         [services.deeplx]: 'option.deeplxExperimental',
+        [services.newapi]: 'option.openAiCompatibleSub2Api',
         [services.custom]: 'option.customEndpoint',
     };
     const serviceDescriptions: Record<string, OptionMessagePath> = {

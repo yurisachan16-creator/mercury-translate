@@ -74,16 +74,17 @@ describe('Mercury Translate i18n', () => {
 
   it('localizes settings option labels and OCR pack copy for every UI locale', () => {
     const expected = {
-      en: { service: 'Microsoft Translator (online)', display: 'Translation only', ocr: 'Simplified Chinese' },
-      'zh-CN': { service: '微软翻译（联网）', display: '仅译文模式', ocr: '简体中文' },
-      'zh-TW': { service: '微軟翻譯（聯網）', display: '僅譯文模式', ocr: '簡體中文' },
-    } satisfies Record<UiLocale, { service: string; display: string; ocr: string }>;
+      en: { service: 'Microsoft Translator (online)', newapi: 'OpenAI-compatible / Sub2API', display: 'Translation only', ocr: 'Simplified Chinese' },
+      'zh-CN': { service: '微软翻译（联网）', newapi: 'OpenAI 兼容 / Sub2API', display: '仅译文模式', ocr: '简体中文' },
+      'zh-TW': { service: '微軟翻譯（聯網）', newapi: 'OpenAI 相容 / Sub2API', display: '僅譯文模式', ocr: '簡體中文' },
+    } satisfies Record<UiLocale, { service: string; newapi: string; display: string; ocr: string }>;
 
     for (const locale of SUPPORTED_UI_LOCALES) {
       const translate = createTranslator(locale);
       const localized = getLocalizedOptions(translate);
       const ocrPacks = getLocalizedImageOcrLanguagePacks(translate);
       expect(localized.services.find(item => item.value === 'microsoft')?.label).toBe(expected[locale].service);
+      expect(localized.services.find(item => item.value === 'newapi')?.label).toBe(expected[locale].newapi);
       expect(localized.display.find(item => item.value === 0)?.label).toBe(expected[locale].display);
       expect(ocrPacks.find(item => item.code === 'chi_sim')?.label).toBe(expected[locale].ocr);
       expect(translate('hotkey.title')).not.toBe('hotkey.title');

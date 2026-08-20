@@ -998,7 +998,10 @@ const createServiceCompute = (serviceSource: ServiceSource) => ({
       config.value.requireApiKey[getApiKeyRequirementKey(serviceSource.value, config.value)] = value;
     },
   }),
-  credentialWarning: computed(() => getMissingCredentialMessage(serviceSource.value, config.value)),
+  credentialWarning: computed(() => getMissingCredentialMessage(serviceSource.value, config.value, {
+    serviceLabel: localizedOptions.value.services.find((item: any) => item.value === serviceSource.value)?.label || serviceSource.value,
+    translate: (path, values) => t(path, values),
+  })),
   showAkSk: computed(() => servicesType.isUseAkSk(serviceSource.value)),
   showYoudao: computed(() => servicesType.isYoudao(serviceSource.value)),
   showTencent: computed(() => servicesType.isTencent(serviceSource.value)),

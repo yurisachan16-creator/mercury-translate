@@ -40,6 +40,25 @@ describe('翻译服务凭据校验', () => {
         expect(getMissingCredentialMessage(services.deeplx, { token: {} })).toBeNull();
     });
 
+    it('Sub2API 同时校验端点，并允许 UI 提供本地化错误文案', () => {
+        const translate = (path: string, values: { service: string }) => `${path}:${values.service}`;
+        expect(getMissingCredentialMessage(services.newapi, {
+            token: { [services.newapi]: 'configured' },
+            newApiUrl: '',
+        }, {
+            serviceLabel: 'OpenAI 兼容 / Sub2API',
+            translate,
+        })).toBe('serviceConfig.missingNewApiEndpoint:OpenAI 兼容 / Sub2API');
+        expect(getMissingCredentialMessage(services.newapi, {
+            token: { [services.newapi]: 'configured' },
+            newApiUrl: 'https://gateway.example/v1',
+        })).toBeNull();
+        expect(getMissingCredentialMessage(services.newapi, {
+            token: { [services.newapi]: 'configured' },
+            newApiUrl: 'https://gateway.example/v1/responses',
+        })).toContain('Chat Completions');
+    });
+
     it('覆盖有道和腾讯云的专用凭据', () => {
         expect(getMissingCredentialMessage(services.youdao, { token: {}, youdaoAppKey: 'key' })).toContain('App Secret');
         expect(getMissingCredentialMessage(services.tencent, { token: {}, tencentSecretId: 'id' })).toContain('SecretKey');

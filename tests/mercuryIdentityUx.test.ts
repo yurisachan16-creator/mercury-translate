@@ -38,6 +38,8 @@ describe('Mercury identity and Sub2API UX', () => {
       expect(message.serviceConfig.sub2apiDiscoveryHint).toBeTruthy()
       expect(message.serviceConfig.sub2apiFetchModels).toBeTruthy()
       expect(message.serviceConfig.sub2apiErrors['openai-compatible-sse-unsupported']).toBeTruthy()
+      expect(message.serviceConfig.missingNewApiEndpoint).toBeTruthy()
+      expect(message.option.openAiCompatibleSub2Api).toMatch(/Sub2API/)
       expect(message.popup.privacyBoundary.local).toBeTruthy()
       expect(message.popup.privacyBoundary['network-free']).toBeTruthy()
       expect(message.popup.privacyBoundary.byok).toBeTruthy()

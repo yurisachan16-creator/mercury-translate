@@ -1,4 +1,5 @@
 import { customModelString, options, services, servicesType } from './option';
+import { normalizeOpenAiCompatibleEndpoints } from '@/entrypoints/service/openai-compatible';
 
 export interface CredentialConfig {
     token?: Record<string, string | undefined>;
@@ -9,6 +10,18 @@ export interface CredentialConfig {
     youdaoAppSecret?: string;
     tencentSecretId?: string;
     tencentSecretKey?: string;
+    newApiUrl?: string;
+}
+
+export type CredentialMessagePath =
+    | 'serviceConfig.missingApiKey'
+    | 'serviceConfig.missingNewApiEndpoint'
+    | 'serviceConfig.missingYoudaoCredentials'
+    | 'serviceConfig.missingTencentCredentials';
+
+export interface CredentialMessageOptions {
+    serviceLabel?: string;
+    translate?: (path: CredentialMessagePath, values: { service: string }) => string;
 }
 
 function getServiceLabel(service: string): string {
@@ -33,23 +46,46 @@ export function isApiKeyRequired(service: string, config: CredentialConfig): boo
 export function getMissingCredentialMessage(
     service: string,
     config: CredentialConfig,
+    messageOptions: CredentialMessageOptions = {},
 ): string | null {
-    const serviceLabel = getServiceLabel(service);
+    const serviceLabel = messageOptions.serviceLabel || getServiceLabel(service);
+    const format = (path: CredentialMessagePath, fallback: string) =>
+        messageOptions.translate?.(path, { service: serviceLabel }) || fallback;
+
+    if (service === services.newapi) {
+        try {
+            normalizeOpenAiCompatibleEndpoints(config.newApiUrl || '');
+        } catch {
+            return format(
+                'serviceConfig.missingNewApiEndpoint',
+                `${serviceLabel} 需要有效的 Chat Completions 接口地址；请先在设置中填写域名根地址、/v1 或 /v1/chat/completions。`,
+            );
+        }
+    }
 
     if (servicesType.isUseToken(service) && service !== services.deeplx && isApiKeyRequired(service, config)) {
         if (!config.token?.[service]?.trim()) {
-            return `${serviceLabel} 需要 API Key（访问令牌），当前尚未配置；请先在设置中填写，再开始翻译。`;
+            return format(
+                'serviceConfig.missingApiKey',
+                `${serviceLabel} 需要 API Key（访问令牌），当前尚未配置；请先在设置中填写，再开始翻译。`,
+            );
         }
     }
 
     if (service === services.youdao
         && (!config.youdaoAppKey?.trim() || !config.youdaoAppSecret?.trim())) {
-        return `${serviceLabel} 需要 App Key 和 App Secret，当前尚未完整配置；请先在设置中填写，再开始翻译。`;
+        return format(
+            'serviceConfig.missingYoudaoCredentials',
+            `${serviceLabel} 需要 App Key 和 App Secret，当前尚未完整配置；请先在设置中填写，再开始翻译。`,
+        );
     }
 
     if (service === services.tencent
         && (!config.tencentSecretId?.trim() || !config.tencentSecretKey?.trim())) {
-        return `${serviceLabel} 需要 SecretId 和 SecretKey，当前尚未完整配置；请先在设置中填写，再开始翻译。`;
+        return format(
+            'serviceConfig.missingTencentCredentials',
+            `${serviceLabel} 需要 SecretId 和 SecretKey，当前尚未完整配置；请先在设置中填写，再开始翻译。`,
+        );
     }
 
     return null;

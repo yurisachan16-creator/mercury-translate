@@ -460,7 +460,10 @@ const canUseAIContext = computed(() => servicesType.isUseAIContext(config.value.
 const servicePickerAriaLabel = computed(() => serviceModelLabel.value
   ? t('popup.serviceAriaWithModel', { service: serviceLabel.value, model: serviceModelLabel.value })
   : t('popup.serviceAria', { service: serviceLabel.value }));
-const credentialWarning = computed(() => getMissingCredentialMessage(config.value.service, config.value));
+const credentialWarning = computed(() => getMissingCredentialMessage(config.value.service, config.value, {
+  serviceLabel: serviceLabel.value,
+  translate: (path, values) => t(path, values),
+}));
 const targetLanguageOptions = computed(() => getTranslationTargetOptionsForProvider(config.value.service));
 const videoServiceLabel = computed(() => videoServiceOptions.value.find((item: any) => item.value === config.value.videoService)?.label || config.value.videoService);
 const styleLabel = computed(() => styleOptions.value.find((item: any) => item.value === config.value.style)?.label || t('popup.defaultStyle'));
