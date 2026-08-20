@@ -1,25 +1,7 @@
 import {createServer, type IncomingMessage, type ServerResponse} from 'node:http';
 import type {AddressInfo} from 'node:net';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-
-const {mockConfig} = vi.hoisted(() => ({
-  mockConfig: {
-    service: 'newapi',
-    newApiUrl: '',
-    token: {newapi: 'fixture-token'} as Record<string, string>,
-    model: {newapi: 'sub2api-fixture-model'} as Record<string, string>,
-    customModel: {} as Record<string, string>,
-    system_role: {newapi: 'You are a translator.'} as Record<string, string>,
-    user_role: {newapi: 'Translate to {{to}}: {{origin}}'} as Record<string, string>,
-    customBody: {newapi: '{"stream":true,"temperature":0.1}'} as Record<string, string>,
-    robot_id: {} as Record<string, string>,
-    to: 'zh-Hans',
-  },
-}));
-
-vi.mock('@/entrypoints/utils/config', () => ({config: mockConfig}));
-
-import newapi, {listConfiguredNewApiModels} from '@/entrypoints/service/newapi';
+import {listNewApiModelsForConfig, translateWithNewApiRuntime} from '@/entrypoints/service/newapi-core';
 
 interface CapturedRequest {
   method?: string;
@@ -85,10 +67,6 @@ describe('Sub2API local fixture integration', () => {
 
   beforeEach(async () => {
     fixture = await startSub2ApiFixture();
-    mockConfig.newApiUrl = fixture.baseUrl;
-    mockConfig.token = {newapi: 'fixture-token'};
-    mockConfig.model = {newapi: 'sub2api-fixture-model'};
-    mockConfig.customBody = {newapi: '{"stream":true,"temperature":0.1}'};
     vi.restoreAllMocks();
   });
 
@@ -97,8 +75,26 @@ describe('Sub2API local fixture integration', () => {
     fixture = undefined;
   });
 
+  function runNewApi(message: {origin: string; pageContext?: string}) {
+    return translateWithNewApiRuntime(message, {
+      endpoint: fixture?.baseUrl ?? '',
+      service: 'newapi',
+      apiKeyForService: () => 'fixture-token',
+      buildBody: request => JSON.stringify({
+        model: 'sub2api-fixture-model',
+        messages: [
+          {role: 'system', content: 'You are a translator.'},
+          {role: 'user', content: `Translate to zh-Hans: ${request.origin}`},
+        ],
+        stream: true,
+        temperature: 0.1,
+      }),
+      postProcess: text => text.trim(),
+    });
+  }
+
   it('discovers models without sending translation text', async () => {
-    await expect(listConfiguredNewApiModels()).resolves.toEqual({
+    await expect(listNewApiModelsForConfig(fixture?.baseUrl ?? '', 'fixture-token')).resolves.toEqual({
       status: 'available',
       models: [{id: 'sub2api-fixture-model', ownedBy: 'local-fixture'}],
     });
@@ -114,7 +110,7 @@ describe('Sub2API local fixture integration', () => {
   });
 
   it('sends non-streaming Chat Completions and parses JSON with an incorrect Content-Type', async () => {
-    await expect(newapi({origin: 'hello', pageContext: ''})).resolves.toBe('本地夹具翻译');
+    await expect(runNewApi({origin: 'hello', pageContext: ''})).resolves.toBe('本地夹具翻译');
 
     expect(fixture?.captured).toHaveLength(1);
     const request = fixture?.captured[0];

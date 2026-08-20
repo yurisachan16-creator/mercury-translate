@@ -1,4 +1,3 @@
-import browser from 'webextension-polyfill';
 import { type UiLocale } from './messages';
 import { detectUiLocale, normalizeUiLocale } from './locale';
 
@@ -12,6 +11,31 @@ export const UI_LOCALE_OPTIONS: Array<{ value: UiLocalePreference; labelKey: 'lo
   { value: 'zh-CN', labelKey: 'locale.zhCN' },
   { value: 'zh-TW', labelKey: 'locale.zhTW' },
 ];
+
+export interface UiLocalePreferenceStorage {
+  local: {
+    get: (key: string) => Promise<Record<string, unknown>>;
+    set: (value: Record<string, unknown>) => Promise<void>;
+  };
+  onChanged: {
+    addListener: (listener: (changes: Record<string, { newValue?: unknown }>, areaName: string) => void) => void;
+    removeListener: (listener: (changes: Record<string, { newValue?: unknown }>, areaName: string) => void) => void;
+  };
+}
+
+function getDefaultStorage(): UiLocalePreferenceStorage | undefined {
+  const extensionGlobal = globalThis as typeof globalThis & {
+    browser?: { storage?: UiLocalePreferenceStorage };
+    chrome?: { storage?: UiLocalePreferenceStorage };
+  };
+  return extensionGlobal.browser?.storage ?? extensionGlobal.chrome?.storage;
+}
+
+function requireDefaultStorage(): UiLocalePreferenceStorage {
+  const storage = getDefaultStorage();
+  if (!storage) throw new Error('Extension storage is unavailable');
+  return storage;
+}
 
 const PREFERENCE_LOCALE_ALIASES = new Set(['en', 'en-US', 'en-GB', 'zh-CN', 'zh_CN', 'zh-Hans', 'zh-TW', 'zh_TW', 'zh-Hant', 'zh-HK', 'zh-MO']);
 
@@ -27,21 +51,27 @@ export function resolveUiLocalePreference(preference: UiLocalePreference): UiLoc
   return preference === 'auto' ? detectUiLocale() : preference;
 }
 
-export async function getStoredUiLocalePreference(): Promise<UiLocalePreference> {
+export async function getStoredUiLocalePreference(storage?: UiLocalePreferenceStorage): Promise<UiLocalePreference> {
   try {
-    const stored = await browser.storage.local.get(UI_LOCALE_STORAGE_KEY);
+    const resolvedStorage = storage ?? getDefaultStorage();
+    if (!resolvedStorage) return 'auto';
+    const stored = await resolvedStorage.local.get(UI_LOCALE_STORAGE_KEY);
     return normalizeUiLocalePreference(stored[UI_LOCALE_STORAGE_KEY]);
   } catch {
     return 'auto';
   }
 }
 
-export async function saveUiLocalePreference(preference: UiLocalePreference): Promise<void> {
-  await browser.storage.local.set({ [UI_LOCALE_STORAGE_KEY]: normalizeUiLocalePreference(preference) });
+export async function saveUiLocalePreference(
+  preference: UiLocalePreference,
+  storage: UiLocalePreferenceStorage = requireDefaultStorage(),
+): Promise<void> {
+  await storage.local.set({ [UI_LOCALE_STORAGE_KEY]: normalizeUiLocalePreference(preference) });
 }
 
 export function watchStoredUiLocalePreference(
   listener: (locale: UiLocale, preference: UiLocalePreference) => void,
+  storage: UiLocalePreferenceStorage = requireDefaultStorage(),
 ): () => void {
   const onChanged = (
     changes: Record<string, { newValue?: unknown }>,
@@ -52,6 +82,6 @@ export function watchStoredUiLocalePreference(
     listener(resolveUiLocalePreference(preference), preference);
   };
 
-  browser.storage.onChanged.addListener(onChanged);
-  return () => browser.storage.onChanged.removeListener(onChanged);
+  storage.onChanged.addListener(onChanged);
+  return () => storage.onChanged.removeListener(onChanged);
 }

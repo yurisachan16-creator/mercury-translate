@@ -14,6 +14,14 @@ import {
 import { getLocalizedOptions } from '@/entrypoints/utils/option';
 import { getLocalizedImageOcrLanguagePacks } from '@/entrypoints/utils/imageOcrLanguages';
 import { localizeStructuredErrorResponse, OCR_MODEL_MISSING_ERROR_CODE } from '@/entrypoints/i18n/errors';
+import {
+  getStoredUiLocalePreference,
+  normalizeUiLocalePreference,
+  saveUiLocalePreference,
+  UI_LOCALE_STORAGE_KEY,
+  watchStoredUiLocalePreference,
+  type UiLocalePreferenceStorage,
+} from '@/entrypoints/i18n/preferences';
 
 function flattenKeys(value: unknown, prefix = ''): string[] {
   if (!value || typeof value !== 'object') return [prefix];
@@ -107,39 +115,28 @@ describe('Mercury Translate i18n', () => {
   });
 
   it('persists an explicit UI locale preference and falls back to auto for invalid values', async () => {
-    vi.resetModules();
     const storageState: Record<string, unknown> = {};
     const get = vi.fn(async (key: string) => ({ [key]: storageState[key] }));
-    const set = vi.fn(async (value: Record<string, unknown>) => Object.assign(storageState, value));
+    const set = vi.fn(async (value: Record<string, unknown>) => {
+      Object.assign(storageState, value);
+    });
     const addListener = vi.fn();
     const removeListener = vi.fn();
-    vi.doMock('webextension-polyfill', () => ({
-      default: {
-        storage: {
-          local: { get, set },
-          onChanged: { addListener, removeListener },
-        },
-      },
-    }));
-
-    const {
-      getStoredUiLocalePreference,
-      normalizeUiLocalePreference,
-      saveUiLocalePreference,
-      UI_LOCALE_STORAGE_KEY,
-      watchStoredUiLocalePreference,
-    } = await import('@/entrypoints/i18n/preferences');
+    const storage: UiLocalePreferenceStorage = {
+      local: { get, set },
+      onChanged: { addListener, removeListener },
+    };
 
     expect(normalizeUiLocalePreference('fr-FR')).toBe('auto');
     expect(normalizeUiLocalePreference('zh_HK')).toBe('auto');
-    expect(await getStoredUiLocalePreference()).toBe('auto');
+    expect(await getStoredUiLocalePreference(storage)).toBe('auto');
 
-    await saveUiLocalePreference('zh-TW');
+    await saveUiLocalePreference('zh-TW', storage);
     expect(set).toHaveBeenCalledWith({ [UI_LOCALE_STORAGE_KEY]: 'zh-TW' });
-    expect(await getStoredUiLocalePreference()).toBe('zh-TW');
+    expect(await getStoredUiLocalePreference(storage)).toBe('zh-TW');
 
     const listener = vi.fn();
-    const stop = watchStoredUiLocalePreference(listener);
+    const stop = watchStoredUiLocalePreference(listener, storage);
     expect(addListener).toHaveBeenCalledTimes(1);
     const storageListener = addListener.mock.calls[0][0];
     storageListener({ [UI_LOCALE_STORAGE_KEY]: { newValue: 'zh-CN' } }, 'local');
@@ -148,6 +145,23 @@ describe('Mercury Translate i18n', () => {
     expect(listener).toHaveBeenCalledWith('zh-CN', 'zh-CN');
     stop();
     expect(removeListener).toHaveBeenCalledWith(storageListener);
+  });
+
+  it('falls back to auto when preference storage is unavailable', async () => {
+    const storage: UiLocalePreferenceStorage = {
+      local: {
+        get: vi.fn(async () => {
+          throw new Error('storage unavailable');
+        }),
+        set: vi.fn(async () => undefined),
+      },
+      onChanged: {
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      },
+    };
+
+    await expect(getStoredUiLocalePreference(storage)).resolves.toBe('auto');
   });
 
   it('localizes structured OCR model errors client-side', () => {
