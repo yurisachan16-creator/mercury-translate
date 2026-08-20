@@ -62,7 +62,7 @@ Required when Task Profile is `bugfix`; leave as-is otherwise.
 ## Change Assessment
 
 ```json
-{"protocol":1,"oracles":[{"id":"local-provider-fixtures","kind":"deterministic_test","paths":["entrypoints/service/","entrypoints/utils/","tests/"]},{"id":"release-artifact-readback","kind":"runtime_readback","paths":["package.json","wxt.config.ts","scripts/","store-assets/"]},{"id":"git-history-fingerprint","kind":"runtime_readback","paths":["*"]},{"id":"chrome-regression","kind":"runtime_readback","paths":["entrypoints/","components/","public/"]}]}
+{"protocol":1,"oracles":[{"id":"local-provider-fixtures","kind":"deterministic_test","paths":["entrypoints/i18n/preferences.ts","entrypoints/service/newapi-core.ts","entrypoints/service/openai-compatible.ts","entrypoints/utils/configValidation.ts","tests/sub2ApiLocalFixture.test.ts"]},{"id":"release-artifact-readback","kind":"runtime_readback","paths":["package.json","wxt.config.ts","scripts/","store-assets/"]},{"id":"git-history-fingerprint","kind":"runtime_readback","paths":["*"]},{"id":"chrome-regression","kind":"runtime_readback","paths":["entrypoints/","components/","public/"]}]}
 ```
 
 ## Acceptance Policy
@@ -101,6 +101,7 @@ allowed_paths:
   - tasks/workstreams/
   - .ai/context/capabilities.json
   - .ai/context/contracts/
+  - .ai/harness/policy.json
   - .ai/harness/checks/latest.json
   - .ai/harness/handoff/
   - .ai/harness/runs/

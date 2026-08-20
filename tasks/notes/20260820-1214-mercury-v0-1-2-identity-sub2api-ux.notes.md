@@ -18,6 +18,7 @@
 
 - Chrome browser control can operate ordinary pages but its security policy refuses `chrome://extensions` and `chrome-extension://` navigation. The complete v0.1.1 Chrome 151 regression report remains valid for unchanged webpage, selection, YouTube, PDF, OCR, cancellation/retry, and privacy paths; this work package does not claim a live reload of the final v0.1.2 popup/settings build.
 - The frozen Claude acceptance review is pending explicit source-disclosure authorization. The external review command was rejected before invocation; no candidate source was transmitted. A local independent gatekeeper review still runs before handoff, but cannot impersonate the frozen Claude AcceptanceReceipt authority.
+- Before the separately confirmed default-branch cutover, repo-harness cannot use the old `main` as its review base because the clean Mercury root intentionally has no shared ancestor with it. The candidate therefore binds `worktree_strategy.review_base` to immutable clean root `f26ac685b63b6e58e555791885ae232433f02b1b`; restoring the normal `main` review base is a required post-cutover governance step and must be reverified as a subject-changing commit.
 
 ## Tradeoffs Considered
 
@@ -57,6 +58,8 @@
 - Security/privacy evidence: no private key, real provider key, or unexpected personal email was found; only the configured GitHub noreply identity and reserved fixture domains appear. Largest tracked files are the two bundled Tesseract WASM JavaScript assets at about 3.95 MB, below the 10 MB review threshold. LICENSE, NOTICE, and THIRD_PARTY_NOTICES remain unchanged from the clean v0.1.1 root.
 - Browser evidence: `.gstack/qa-reports/qa-report-mercury-translate-browser-2026-08-20.md` records the prior Chrome 151 full matrix and 24 inspected screenshots, including webpage, selection, dynamic/Shadow DOM, YouTube, PDF, OCR, cancel/retry, and local/network privacy. v0.1.2 provider behavior is additionally covered by local/mocked tests; final popup/settings live reload remains the explicit manual residual noted above.
 - Independent local gatekeeper review at `3e01db9b55a8f29f5082cec20e9446ffa2466148` returned PASS after rerunning compile, 56 files / 498 tests, build, docs, release artifacts/readiness, diff, doctor, strict workflow, and strict read-only contract verification. It confirmed the provider/privacy/history/manifest boundaries and carried forward only the documented Chrome special-page, external Claude AcceptanceReceipt, user-level hook warning, and nonfatal docs imagemin residuals.
+- Review-subject diagnosis at `fa3d7dc12ba6ceaa22e86a14b14a37e795d78300` proved that the old `main` (`83396931351ddf93637fb119c8582358533e8bf5`) and the clean candidate have no merge base, so fail-closed Change Assessment correctly reported `subject_unavailable`. Binding the pre-cutover review base to clean root `f26ac685b63b6e58e555791885ae232433f02b1b` makes the normalized final-content subject fully observable without moving local or remote `main`.
+- Change Assessment oracles use literal reviewed paths rather than directory-prefix shorthand: repo-harness treats oracle paths as exact matches (or `*`), so the deterministic local-provider oracle names the five abstraction-selected files directly. This preserves the strict oracle-gap check instead of broadening it to an unearned whole-subject claim.
 
 ## Promotion Filter
 

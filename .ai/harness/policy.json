@@ -51,7 +51,7 @@
     "auto_for_contract_tasks": true,
     "branch_prefix": "codex/",
     "base_branch": "main",
-    "review_base": "main",
+    "review_base": "f26ac685b63b6e58e555791885ae232433f02b1b",
     "worktree_dir_template": "../{{repo}}-wt-{{slug}}",
     "merge_back": {
       "target": "main",
