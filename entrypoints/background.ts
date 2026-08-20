@@ -34,6 +34,10 @@ import {
     formatConnectionTestError,
     runTranslationServiceConnectionTest,
 } from "@/entrypoints/service/connection-test";
+import {
+    isOpenAiCompatibleError,
+} from '@/entrypoints/service/openai-compatible';
+import {listConfiguredNewApiModels} from '@/entrypoints/service/newapi';
 import type { AreaTranslationSelection } from "@/entrypoints/utils/areaTranslationCore";
 import {buildPageSummaryPrompt, buildPageSummarySystemPrompt} from "@/entrypoints/utils/template";
 import {
@@ -850,6 +854,27 @@ export default defineBackground({
                         const to = typeof message.to === 'string' ? message.to : config.to;
                         const availability = await checkChromeTranslatorAvailabilityWithOffscreen(from, to);
                         resolve({success: true, availability});
+                        return;
+                    }
+
+                    if (message.type === 'provider.listModels') {
+                        await configReady;
+                        if (message.providerId !== services.newapi) {
+                            resolve({success: false, error: 'Unsupported model catalog provider'});
+                            return;
+                        }
+                        try {
+                            // The UI sends only the stable provider ID. Endpoint and key
+                            // stay in the background's local configuration object.
+                            const catalog = await listConfiguredNewApiModels();
+                            resolve({success: true, ...catalog});
+                        } catch (error) {
+                            if (isOpenAiCompatibleError(error)) {
+                                resolve({success: false, code: error.code, details: error.details});
+                                return;
+                            }
+                            throw error;
+                        }
                         return;
                     }
 
