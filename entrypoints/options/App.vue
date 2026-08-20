@@ -66,7 +66,6 @@
               <h3 id="about-title">{{ t('shell.readingTagline') }}</h3>
               <p>{{ t('shell.aboutDescription') }}</p>
               <span class="about-version">{{ t('brand.versionPrefix') }} · V{{ version }}</span>
-              <small class="about-attribution">{{ t('brand.upstreamAttribution') }}</small>
             </div>
           </div>
 
@@ -87,7 +86,7 @@
               <h3>{{ t('shell.improveTogether') }}</h3>
               <p>{{ t('shell.learnMoreDetail') }}</p>
               <div class="about-links">
-                <a href="https://github.com/Bistutu/FluentRead" target="_blank" rel="noreferrer">{{ t('shell.upstreamProject') }} <span>↗</span></a>
+                <a href="https://github.com/yurisachan16-creator/mercury-translate" target="_blank" rel="noreferrer">{{ t('brand.openSourceProject') }} <span>↗</span></a>
               </div>
             </article>
           </div>

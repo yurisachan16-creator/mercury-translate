@@ -10,12 +10,7 @@
         {{ buttonText }}
       </el-link>
       <div class="right-links">
-        <el-link class="action-link" href="https://github.com/Bistutu/FluentRead" target="_blank">
-          <el-icon class="github-icon">
-            <Star />
-          </el-icon>
-          {{ t('footer.upstream') }}
-        </el-link>
+        <span class="action-link">{{ t('brand.productName') }}</span>
       </div>
     </div>
   </div>
@@ -24,7 +19,7 @@
 <script lang="ts" setup>
 import { computed, onUnmounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Star, Loading } from "@element-plus/icons-vue";
+import { Loading } from "@element-plus/icons-vue";
 import { Config } from "../entrypoints/utils/model";
 import browser from 'webextension-polyfill';
 import { config, configReady, subscribeConfig } from '@/entrypoints/utils/config';

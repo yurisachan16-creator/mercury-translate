@@ -59,6 +59,10 @@
               <strong>{{ serviceLabel }}</strong>
               <em v-if="serviceModelLabel" class="service-model" :title="serviceModelLabel">{{ serviceModelLabel }}</em>
             </span>
+            <span class="service-meta">
+              <b>{{ servicePrivacyLabel }}</b>
+              <em v-if="serviceEndpointHost">{{ serviceEndpointHost }}</em>
+            </span>
           </span>
           <span class="chevron" :class="{ open: servicePickerOpen }">⌄</span>
         </button>
@@ -199,19 +203,7 @@
 
     <footer>
       <span>{{ t('popup.translationCount', { count: config.count }) }}</span>
-      <a
-        class="opensource-link"
-        href="https://github.com/Bistutu/FluentRead"
-        target="_blank"
-        rel="noreferrer"
-        :aria-label="t('popup.openUpstreamOnGithub')"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 .3a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.26c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.77.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.62-2.81 5.65-5.49 5.95.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .3" />
-        </svg>
-        <span>{{ t('shell.upstreamProject') }}</span>
-        <span class="external-mark" aria-hidden="true">↗</span>
-      </a>
+      <span class="opensource-link">{{ t('brand.productName') }} · V{{ version }}</span>
       <button type="button" :disabled="clearingCache" @click="clearCache">{{ clearingCache ? t('popup.clearing') : t('popup.clearCache') }}</button>
     </footer>
 
@@ -390,6 +382,7 @@ import { getMissingCredentialMessage } from '@/entrypoints/utils/configValidatio
 import { getSelectedModelLabel } from '@/entrypoints/utils/serviceCatalog';
 import {requestProviderHostPermission} from '@/entrypoints/utils/providerPermissions';
 import {getTranslationTargetOptionsForProvider} from '@/entrypoints/utils/languageRegistry';
+import {getProviderDescriptor} from '@/entrypoints/utils/providerCapabilities';
 import ServiceIcon from '@/components/ServiceIcon.vue';
 
 type DrawerName = 'hover' | 'selection' | 'floating' | 'appearance' | 'image' | 'video';
@@ -441,6 +434,24 @@ const moreServiceOptions = computed(() => serviceOptions.value.filter((item: any
 const styleOptions = computed(() => localizedOptions.value.styles.filter((item: any) => !item.disabled));
 const serviceLabel = computed(() => serviceOptions.value.find((item: any) => item.value === config.value.service)?.label || config.value.service);
 const serviceModelLabel = computed(() => getSelectedModelLabel(config.value.service, config.value.model, config.value.customModel, t));
+const serviceDescriptor = computed(() => getProviderDescriptor(
+  config.value.service,
+  config.value.service === services.custom ? config.value.custom : config.value.service === services.newapi ? config.value.newApiUrl : undefined,
+));
+const servicePrivacyLabel = computed(() => t(`popup.privacyBoundary.${serviceDescriptor.value.privacyBoundary}`));
+const serviceEndpointHost = computed(() => {
+  const endpoint = config.value.service === services.newapi
+    ? config.value.newApiUrl
+    : config.value.service === services.custom
+      ? config.value.custom
+      : '';
+  if (!endpoint?.trim()) return '';
+  try {
+    return new URL(endpoint).hostname;
+  } catch {
+    return t('popup.endpointConfigured');
+  }
+});
 const aiContextModel = computed(() => resolveConfiguredModel(
   config.value.model[config.value.service],
   config.value.customModel[config.value.service],

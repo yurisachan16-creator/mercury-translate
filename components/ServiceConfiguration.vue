@@ -31,12 +31,15 @@
     <div class="subsection-heading">
       <div>
         <strong>{{ t('serviceConfig.connectionParameters') }}</strong>
-        <small class="connection-test-hint">{{ t('serviceConfig.connectionTestHint') }}</small>
+        <small class="connection-test-hint">
+          {{ compute.showNewAPI ? t('serviceConfig.sub2apiDiscoveryHint') : t('serviceConfig.connectionTestHint') }}
+        </small>
       </div>
     </div>
 
     <Teleport defer to=".detail-hero">
       <button
+        v-if="!compute.showNewAPI"
         type="button"
         class="connection-test-button"
         data-connection-test-button
@@ -59,7 +62,7 @@
       <span>{{ connectionTestMessage }}</span>
     </div>
 
-    <div v-show="compute.showAI && compute.showToken" class="api-key-policy">
+    <div v-show="compute.showAI && compute.showToken && !compute.showNewAPI" class="api-key-policy">
       <div class="api-key-policy-copy">
         <div class="api-key-policy-title">
           <strong>{{ t('serviceConfig.apiKeyAuth') }}</strong>
@@ -75,7 +78,7 @@
       <el-switch v-model="compute.requireApiKey" :aria-label="t('serviceConfig.apiKeyRequiredAria')" size="small" />
     </div>
 
-    <el-row v-show="compute.showToken" class="margin-bottom margin-left-2em">
+    <el-row v-show="compute.showToken && !compute.showNewAPI" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
         <el-tooltip class="box-item" effect="dark" :content="t('serviceConfig.accessTokenTip')" placement="top-start" :show-after="500">
           <span class="popup-text popup-vertical-left">{{ t('serviceConfig.accessToken') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span>
@@ -173,12 +176,60 @@
       <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.customEndpointTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.customEndpoint') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
       <el-col :span="12"><el-input v-model="config.custom" :placeholder="t('serviceConfig.customEndpointPlaceholder')" @change="ensureConfiguredProviderPermission" /></el-col>
     </el-row>
-    <el-row v-show="compute.showNewAPI" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.newApiEndpointTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ t('serviceConfig.newApiEndpoint') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
-      <el-col :span="12"><el-input v-model="config.newApiUrl" :placeholder="t('serviceConfig.newApiEndpointPlaceholder')" @change="ensureConfiguredProviderPermission" /></el-col>
-    </el-row>
+    <div v-show="compute.showNewAPI" class="sub2api-setup" data-sub2api-setup>
+      <div class="sub2api-step">
+        <span class="sub2api-step-index">1</span>
+        <label>
+          <strong>{{ t('serviceConfig.sub2apiEndpointStep') }}</strong>
+          <el-input v-model="config.newApiUrl" :placeholder="t('serviceConfig.sub2apiEndpointPlaceholder')" @change="ensureConfiguredProviderPermission" />
+          <small>{{ t('serviceConfig.sub2apiEndpointHelp') }}</small>
+        </label>
+      </div>
 
-    <el-row v-show="compute.showCustomModel" class="margin-bottom margin-left-2em">
+      <div class="sub2api-step">
+        <span class="sub2api-step-index">2</span>
+        <label>
+          <strong>{{ t('serviceConfig.sub2apiKeyStep') }}</strong>
+          <el-input v-model="config.token[service]" type="password" show-password :placeholder="t('serviceConfig.accessTokenPlaceholder')" />
+          <small>{{ t('serviceConfig.sub2apiKeyHelp') }}</small>
+        </label>
+      </div>
+
+      <div class="sub2api-step">
+        <span class="sub2api-step-index">3</span>
+        <div class="sub2api-models">
+          <div class="sub2api-models-heading">
+            <div>
+              <strong>{{ t('serviceConfig.sub2apiModelStep') }}</strong>
+              <small>{{ t('serviceConfig.sub2apiModelHelp') }}</small>
+            </div>
+            <button type="button" :disabled="modelListBusy || !config.newApiUrl || !config.token[service]" @click="fetchNewApiModels">
+              {{ modelListBusy ? t('serviceConfig.checking') : t('serviceConfig.sub2apiFetchModels') }}
+            </button>
+          </div>
+
+          <el-select
+            v-if="discoveredModels.length"
+            v-model="selectedDiscoveredModel"
+            filterable
+            :placeholder="t('serviceConfig.sub2apiSelectModel')"
+            @change="selectDiscoveredModel"
+          >
+            <el-option v-for="model in discoveredModels" :key="model.id" :label="formatModelOption(model)" :value="model.id" />
+          </el-select>
+
+          <el-input v-model="config.customModel[service]" :placeholder="t('serviceConfig.sub2apiManualModelPlaceholder')" @input="setManualModel" />
+          <p v-if="modelListMessage" class="sub2api-model-message" :class="`is-${modelListState}`" role="status" aria-live="polite">{{ modelListMessage }}</p>
+        </div>
+      </div>
+
+      <div class="sub2api-step">
+        <span class="sub2api-step-index">4</span>
+        <p class="sub2api-save-note">{{ t('serviceConfig.sub2apiSaveHelp') }}</p>
+      </div>
+    </div>
+
+    <el-row v-show="compute.showCustomModel && !compute.showNewAPI" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner"><el-tooltip effect="dark" :content="t('serviceConfig.customModelTip')" placement="top-start" :show-after="300"><span class="popup-text popup-vertical-left">{{ service === 'doubao' ? t('serviceConfig.endpoint') : t('serviceConfig.customModel') }}<el-icon class="icon-margin"><InfoFilled /></el-icon></span></el-tooltip></el-col>
       <el-col :span="12"><el-input v-model="config.customModel[service]" :placeholder="t('serviceConfig.customModelPlaceholder')" /></el-col>
     </el-row>
@@ -206,7 +257,7 @@
 import { computed, ref, toRef, watch } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import type { Config } from '@/entrypoints/utils/model'
-import { options as optionConfig, services } from '@/entrypoints/utils/option'
+import { customModelString, options as optionConfig, services } from '@/entrypoints/utils/option'
 import { isValidCustomBody } from '@/entrypoints/utils/custom-body'
 import browser from 'webextension-polyfill'
 import { requestConfigSave } from '@/entrypoints/utils/config'
@@ -301,10 +352,20 @@ const minimaxEndpoint = computed(() => {
 })
 
 type ConnectionTestState = 'idle' | 'testing' | 'success' | 'error'
+type ModelListState = 'idle' | 'success' | 'manual' | 'error'
+type ProviderModelListResponse =
+  | { success: true; status: 'available'; models: Array<{id: string; ownedBy?: string}> }
+  | { success: true; status: 'manual'; reason?: string }
+  | { success: false; code?: string; details?: {status?: number} }
 
 const connectionTestBusy = ref(false)
 const connectionTestState = ref<ConnectionTestState>('idle')
 const connectionTestMessage = ref('')
+const modelListBusy = ref(false)
+const modelListState = ref<ModelListState>('idle')
+const modelListMessage = ref('')
+const discoveredModels = ref<Array<{id: string; ownedBy?: string}>>([])
+const selectedDiscoveredModel = ref('')
 
 function resetConnectionTest(): void {
   connectionTestState.value = 'idle'
@@ -324,7 +385,7 @@ async function ensureConfiguredProviderPermission(): Promise<void> {
 }
 
 async function testConnection(): Promise<void> {
-  if (connectionTestBusy.value) return
+  if (connectionTestBusy.value || service.value === services.newapi) return
 
   connectionTestBusy.value = true
   connectionTestState.value = 'testing'
@@ -350,6 +411,68 @@ async function testConnection(): Promise<void> {
     connectionTestMessage.value = error instanceof Error ? error.message : String(error)
   } finally {
     connectionTestBusy.value = false
+  }
+}
+
+function setManualModel(): void {
+  if (service.value !== services.newapi) return
+  config.value.model[service.value] = customModelString
+}
+
+function selectDiscoveredModel(modelId: string): void {
+  if (service.value !== services.newapi || !modelId) return
+  config.value.model[service.value] = modelId
+}
+
+function formatModelOption(model: {id: string; ownedBy?: string}): string {
+  return model.ownedBy ? `${model.id} · ${model.ownedBy}` : model.id
+}
+
+function formatModelListError(response: Extract<ProviderModelListResponse, {success: false}>): string {
+  const key = response.code || 'openai-compatible-upstream-failure'
+  const messageKey = `serviceConfig.sub2apiErrors.${key}`
+  const status = response.details?.status
+  const message = t(messageKey)
+  return status ? `${message} (${status})` : message
+}
+
+async function fetchNewApiModels(): Promise<void> {
+  if (modelListBusy.value || service.value !== services.newapi) return
+  modelListBusy.value = true
+  modelListState.value = 'idle'
+  modelListMessage.value = t('serviceConfig.sub2apiFetchingModels')
+  discoveredModels.value = []
+  try {
+    const permissionGranted = await requestProviderHostPermission(service.value, config.value)
+    if (!permissionGranted) throw new Error(t('serviceConfig.providerPermissionDenied'))
+    await requestConfigSave(config.value, browser.runtime.sendMessage.bind(browser.runtime))
+    const response = await browser.runtime.sendMessage({
+      type: 'provider.listModels',
+      providerId: services.newapi,
+    }) as ProviderModelListResponse | undefined
+
+    if (!response) throw new Error(t('serviceConfig.sub2apiErrors.openai-compatible-invalid-response'))
+    if (!response.success) {
+      modelListState.value = 'error'
+      modelListMessage.value = formatModelListError(response)
+      return
+    }
+    if (response.status === 'manual') {
+      modelListState.value = 'manual'
+      modelListMessage.value = t('serviceConfig.sub2apiManualFallback')
+      return
+    }
+
+    discoveredModels.value = response.models
+    modelListState.value = 'success'
+    modelListMessage.value = response.models.length
+      ? t('serviceConfig.sub2apiModelsLoaded', { count: response.models.length })
+      : t('serviceConfig.sub2apiNoModels')
+  } catch (error) {
+    modelListState.value = 'error'
+    modelListMessage.value = error instanceof Error ? error.message : t('serviceConfig.sub2apiErrors.openai-compatible-upstream-failure')
+  } finally {
+    modelListBusy.value = false
   }
 }
 
@@ -380,6 +503,10 @@ async function grantNetworkConsent(mode: NetworkConsentMode): Promise<void> {
 watch(service, () => {
   resetConnectionTest()
   networkConsentMessage.value = ''
+  modelListState.value = 'idle'
+  modelListMessage.value = ''
+  discoveredModels.value = []
+  selectedDiscoveredModel.value = ''
 })
 
 watch(
@@ -675,5 +802,105 @@ watch(
   flex: 0 0 auto;
   --el-switch-on-color: #ef4776;
   --el-switch-off-color: #cfd5df;
+}
+
+.sub2api-setup {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid #e8ebf2;
+  border-radius: 16px;
+  background: #fbfcfe;
+}
+
+.sub2api-step {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.sub2api-step-index {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #c52f58;
+  background: #fff2f5;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sub2api-step label,
+.sub2api-models {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.sub2api-step strong {
+  color: #172033;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sub2api-step small,
+.sub2api-save-note {
+  margin: 0;
+  color: #818a9d;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.sub2api-models-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sub2api-models-heading > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sub2api-models-heading button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #ef4776;
+  border-radius: 8px;
+  color: #c52f58;
+  background: #fff4f7;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.sub2api-models-heading button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.sub2api-model-message {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.sub2api-model-message.is-success {
+  color: #287447;
+}
+
+.sub2api-model-message.is-manual {
+  color: #7a5a00;
+}
+
+.sub2api-model-message.is-error {
+  color: #a52c48;
 }
 </style>

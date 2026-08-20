@@ -380,7 +380,7 @@ export const options = {
         {value: "ai", label: "AI翻译", disabled: true},
         {value: services.siliconCloud, label: "硅基流动"},
         {value: services.huanYuan, label: "腾讯混元"},
-        {value: services.newapi, label: "New API"},
+        {value: services.newapi, label: "OpenAI-compatible / Sub2API"},
         {value: services.deepseek, label: "DeepSeek"},
         {value: services.openai, label: "OpenAI"},
         {value: services.azureOpenai, label: "Azure OpenAI"},
