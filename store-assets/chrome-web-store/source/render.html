@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./listing.css" />
+    <title>Mercury Translate Chrome Web Store assets</title>
+  </head>
+  <body>
+    <main id="asset" class="asset"></main>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const asset = params.get('asset') || 'promo';
+      const root = document.documentElement;
+      const mount = document.getElementById('asset');
+
+      const size = asset === 'promo' ? [440, 280] : [1280, 800];
+      root.style.setProperty('--asset-width', `${size[0]}px`);
+      root.style.setProperty('--asset-height', `${size[1]}px`);
+
+      const frame = (title, subtitle, body) => `
+        <section class="asset screen">
+          <div class="topline">
+            <div class="mark"><span class="planet"></span><span>Mercury Translate</span></div>
+            <span>Chrome 151+ · Local-first</span>
+          </div>
+          <div class="hero-copy">
+            <h1>${title}</h1>
+            <p>${subtitle}</p>
+          </div>
+          <div class="browser">
+            <div class="browser-bar">
+              <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+              <span class="address">chrome-extension://mercury-translate/${asset}</span>
+            </div>
+            ${body}
+          </div>
+        </section>`;
+
+      const views = {
+        promo: `
+          <section class="asset promo">
+            <div class="brand"><span class="planet"></span><span>Mercury Translate</span></div>
+            <h1>Read the web<br />side by side</h1>
+            <p>Webpages, YouTube captions, images, and PDFs with clear local and network boundaries.</p>
+            <span class="orbit"></span>
+          </section>`,
+        webpage: frame('Bilingual webpages without leaving the page', 'Original paragraphs stay visible while translations appear in context.', `
+          <div class="article">
+            <section>
+              <h2>Mercury helps you keep the original source in view</h2>
+              <p class="para">Local-first translation keeps reading context intact.<br /><span class="translation">本地优先的翻译会保留阅读上下文。</span></p>
+              <p class="para">Dynamic pages and open Shadow DOM content are handled where Chrome allows access.<br /><span class="translation">在 Chrome 允许访问的范围内支持动态页面和开放 Shadow DOM。</span></p>
+              <p class="para">You can retry, switch providers, or restore the original text.</p>
+            </section>
+            <aside class="side-card">
+              <span class="pill">Chrome Translator ready</span>
+              <p>Network services are never used as a silent fallback.</p>
+              <p>Google and Microsoft/Bing require explicit consent before text leaves the browser.</p>
+            </aside>
+          </div>`),
+        youtube: frame('YouTube captions in two languages', 'Follow lectures and demos with original captions and translated captions together.', `
+          <div class="video-stage">
+            <div class="video-frame"></div>
+            <div class="caption-box">The model is available on this device.<small>此语言模型已在本机可用。</small></div>
+          </div>`),
+        pdf: frame('PDF pages on the left, translations on the right', 'Mercury handles supported PDFs with a local two-column reader and visible-page scheduling.', `
+          <div class="pdf">
+            <section class="pdf-page">
+              <h3>Research note</h3>
+              <div class="pdf-line"></div><div class="pdf-line med"></div><div class="pdf-line"></div>
+              <div class="pdf-line short"></div><div class="pdf-line"></div><div class="pdf-line med"></div>
+              <div class="pdf-line"></div><div class="pdf-line short"></div>
+            </section>
+            <aside class="pdf-side">
+              <h3>Page 4 translation</h3>
+              <div class="block">Visible pages and nearby pages are translated first.</div>
+              <div class="block">Scanned pages ask for an OCR language before recognition.</div>
+              <div class="block">Password-protected or damaged PDFs fall back to Chrome's native viewer.</div>
+            </aside>
+          </div>`),
+        ocr: frame('Local OCR for images and scanned pages', 'Recognize text locally, then translate with the provider you selected.', `
+          <div class="ocr">
+            <section class="photo">
+              <div class="label">駅前案内</div>
+              <div class="box one"></div>
+              <div class="box two"></div>
+            </section>
+            <aside class="ocr-result">
+              <span class="pill">OCR language: jpn</span>
+              <h3>Detected text</h3>
+              <p>駅前案内</p>
+              <p class="translation">Station information</p>
+              <p>OCR models are downloaded from fixed release assets and checked before local use.</p>
+            </aside>
+          </div>`),
+        services: frame('Local, network, and BYOK boundaries are clear', 'Choose a provider deliberately. API keys stay in local extension storage.', `
+          <div class="settings">
+            <nav>
+              <div class="nav-row">General</div>
+              <div class="nav-row active">Services & privacy</div>
+              <div class="nav-row">PDF cache</div>
+              <div class="nav-row">Settings transfer</div>
+            </nav>
+            <section class="settings-main">
+              <h3>Translation providers</h3>
+              <div class="settings-card"><strong>Chrome Translator</strong><span>Runs on-device when the language pair is available.</span><span class="badge">Local</span></div>
+              <div class="settings-card"><strong>Ollama</strong><span>Uses your own local endpoint.</span><span class="badge">Local</span></div>
+              <div class="settings-card"><strong>Google / Microsoft-Bing</strong><span>Free network services; ask before sending text.</span><span class="badge network">Network</span></div>
+              <div class="settings-card"><strong>OpenAI-compatible</strong><span>Bring your own key; keys are not synced.</span><span class="badge byok">BYOK</span></div>
+              <div class="settings-card"><strong>DeepLX</strong><span>Advanced experiment, off by default.</span><span class="badge off">Off</span></div>
+            </section>
+          </div>`)
+      };
+
+      mount.outerHTML = views[asset] || views.promo;
+    </script>
+  </body>
+</html>

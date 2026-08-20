@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Mercury Translate icon">
+  <defs>
+    <radialGradient id="planet" cx="38%" cy="28%" r="66%">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="42%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </radialGradient>
+    <linearGradient id="orbit" x1="12" y1="22" x2="116" y2="106">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="48%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#0f172a"/>
+  <circle cx="64" cy="64" r="35" fill="url(#planet)"/>
+  <path d="M15 76c17 18 78 31 98 8 10-12-1-27-27-37" fill="none" stroke="url(#orbit)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M26 52c21-16 70-15 84 4" fill="none" stroke="#e0f2fe" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+  <text x="43" y="72" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="#0f172a">A</text>
+  <text x="63" y="77" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="800" fill="#0f172a">译</text>
+</svg>

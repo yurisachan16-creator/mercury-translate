@@ -1,0 +1,193 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { parseHTML } from 'linkedom';
+
+vi.mock('@wxt-dev/storage', () => ({
+    storage: {
+        getItem: vi.fn().mockResolvedValue(null),
+        setItem: vi.fn().mockResolvedValue(undefined),
+        watch: vi.fn().mockReturnValue(() => undefined),
+    },
+}));
+vi.mock('webextension-polyfill', () => ({
+    default: {
+        runtime: {
+            getURL: (path: string) => `chrome-extension://mercury/${path}`,
+            sendMessage: vi.fn(),
+        },
+        storage: {
+            onChanged: {
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+            },
+        },
+    },
+}));
+import {
+    getVideoServiceLabel,
+    getVideoPretranslationWindowMs,
+    isYouTubeVideoPage,
+    isIncrementalVideoCaption,
+    mountVideoSubtitleTranslation,
+    normalizeVideoSubtitleDisplayMode,
+    normalizeVideoCaptionText,
+    readVisibleCaptionText,
+    revealVideoSubtitleTranslation,
+    shouldWarnVideoSubtitleTranslationFailure,
+    VIDEO_CAPTION_SEGMENT_SELECTOR,
+    VIDEO_TRANSLATION_BUTTON_ID,
+} from '@/entrypoints/main/videoSubtitle';
+import { NetworkConsentRequiredError } from '@/entrypoints/utils/providerConsent';
+import { normalizeVideoSubtitleFontSize } from '@/entrypoints/utils/model';
+
+afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+});
+
+describe('YouTube 视频字幕识别', () => {
+    it('只把 YouTube 视频页识别为视频字幕目标', () => {
+        expect(isYouTubeVideoPage({ hostname: 'www.youtube.com', pathname: '/watch' })).toBe(true);
+        expect(isYouTubeVideoPage({ hostname: 'youtube-nocookie.com', pathname: '/watch' })).toBe(true);
+        expect(isYouTubeVideoPage({ hostname: 'www.youtube.com', pathname: '/results' })).toBe(false);
+        expect(isYouTubeVideoPage({ hostname: 'example.com', pathname: '/watch' })).toBe(false);
+    });
+
+    it('按播放器中的字幕片段合并文本，并忽略空片段', () => {
+        const segments = [
+            { textContent: '  This is ', contains: () => false },
+            { textContent: 'a test.\n', contains: () => false },
+            { textContent: '', contains: () => false },
+        ];
+        const container = {
+            querySelectorAll: (selector: string) => {
+                expect(selector).toBe(VIDEO_CAPTION_SEGMENT_SELECTOR);
+                return segments;
+            },
+        } as unknown as Element;
+
+        expect(readVisibleCaptionText(container)).toBe('This is a test.');
+        expect(readVisibleCaptionText(null)).toBe('');
+    });
+
+    it('优先读取叶子字幕片段，避免 YouTube 嵌套节点重复拼接', () => {
+        const child = { textContent: 'A subtitle.', contains: () => false };
+        const parent = { textContent: 'A subtitle.', contains: (node: unknown) => node === child };
+        const container = {
+            querySelectorAll: () => [parent, child],
+        } as unknown as Element;
+
+        expect(readVisibleCaptionText(container)).toBe('A subtitle.');
+    });
+
+    it('存在原生字幕片段时忽略字幕设置等 captions-text 文本', () => {
+        const subtitle = { textContent: 'the axioms and the basics.', contains: () => false };
+        const settings = { textContent: '英语（自动生成）点击 查看设置', contains: () => false };
+        const container = {
+            querySelectorAll: (selector: string) => selector === VIDEO_CAPTION_SEGMENT_SELECTOR ? [subtitle] : [settings],
+        } as unknown as Element;
+
+        expect(readVisibleCaptionText(container)).toBe('the axioms and the basics.');
+    });
+
+    it('保留播放器菜单需要的三种显示模式，并为服务显示用户可读名称', () => {
+        expect(normalizeVideoSubtitleDisplayMode('translation-only')).toBe('translation-only');
+        expect(normalizeVideoSubtitleDisplayMode('original-only')).toBe('original-only');
+        expect(normalizeVideoSubtitleDisplayMode('unknown')).toBe('bilingual');
+        expect(getVideoServiceLabel('microsoft', 'en')).toBe('Microsoft Translator (online)');
+        expect(getVideoServiceLabel('microsoft', 'zh-CN')).toBe('微软翻译（联网）');
+        expect(getVideoServiceLabel('microsoft', 'zh-TW')).toBe('微軟翻譯（聯網）');
+        expect(getVideoServiceLabel('custom-service')).toBe('custom-service');
+        expect(getVideoPretranslationWindowMs('microsoft')).toBe(10_000);
+        expect(getVideoPretranslationWindowMs('openai')).toBe(30_000);
+        expect(normalizeVideoSubtitleFontSize(undefined)).toBe(100);
+        expect(normalizeVideoSubtitleFontSize(125)).toBe(130);
+        expect(normalizeVideoSubtitleFontSize(10)).toBe(80);
+        expect(normalizeVideoSubtitleFontSize(200)).toBe(160);
+    });
+
+    it('按原生字幕已经显示的前缀揭示完整 cue 的译文，并保留一次性完整字幕的整句结果', () => {
+        const fullSource = 'understand from [music] the axioms and the basics.';
+        const fullTranslation = '从音乐中理解公理和基础。';
+
+        expect(normalizeVideoCaptionText('  understand\nfrom   [music]  ')).toBe('understand from [music]');
+        expect(revealVideoSubtitleTranslation(fullTranslation, 'understand', fullSource)).toBe('从音乐');
+        expect(revealVideoSubtitleTranslation(fullTranslation, 'understand from [music] the axioms and', fullSource)).toBe('从音乐中理解公理和基');
+        expect(revealVideoSubtitleTranslation(fullTranslation, fullSource, fullSource)).toBe(fullTranslation);
+        expect(revealVideoSubtitleTranslation(fullTranslation, 'unrelated subtitle', fullSource)).toBe(fullTranslation);
+    });
+
+    it('识别逐词前缀并允许播放器改用完整原文 cue', () => {
+        expect(isIncrementalVideoCaption('understand from', 'understand from [music] the axioms and the basics.')).toBe(true);
+        expect(isIncrementalVideoCaption('understand from [music] the axioms and the basics.', 'understand from [music] the axioms and the basics.')).toBe(false);
+        expect(isIncrementalVideoCaption('unrelated subtitle', 'understand from [music] the axioms and the basics.')).toBe(false);
+    });
+
+    // Regression: ISSUE-007 — expected video consent cancellations must not spam console warnings.
+    // Found by /qa on 2026-08-20
+    // Report: .gstack/qa-reports/qa-report-mercury-translate-browser-2026-08-20.md
+    it('不把用户取消联网授权或主动中止当作视频字幕翻译告警', () => {
+        const consentError = new NetworkConsentRequiredError({
+            type: 'network-consent-required',
+            reason: 'network-provider-not-approved',
+            providerId: 'google',
+            privacyBoundary: 'network-free',
+            availableProviders: ['google'],
+            message: '需要联网授权',
+        });
+        const abortError = new Error('翻译已取消');
+        abortError.name = 'AbortError';
+
+        expect(shouldWarnVideoSubtitleTranslationFailure(consentError)).toBe(false);
+        expect(shouldWarnVideoSubtitleTranslationFailure(abortError)).toBe(false);
+        expect(shouldWarnVideoSubtitleTranslationFailure(new Error('service unavailable'))).toBe(true);
+    });
+
+    // Regression: ISSUE-001 — YouTube SPA navigation must mount subtitle controls.
+    // Found by /qa on 2026-08-20
+    // Report: .gstack/qa-reports/qa-report-mercury-translate-browser-2026-08-20.md
+    it('从 YouTube 搜索结果 SPA 进入播放页后挂载字幕按钮', () => {
+        vi.useFakeTimers();
+        let currentUrl = new URL('https://www.youtube.com/results?search_query=mercury');
+        const { document, window } = parseHTML(`
+            <html>
+              <head></head>
+              <body>
+                <div id="movie_player" class="html5-video-player">
+                  <div class="ytp-right-controls"><button class="ytp-button" type="button"></button></div>
+                </div>
+              </body>
+            </html>
+        `);
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            get: () => currentUrl,
+        });
+        Object.assign(window, {
+            setInterval: globalThis.setInterval,
+            clearInterval: globalThis.clearInterval,
+            setTimeout: globalThis.setTimeout,
+            clearTimeout: globalThis.clearTimeout,
+        });
+        vi.stubGlobal('window', window);
+        vi.stubGlobal('document', document);
+        vi.stubGlobal('Element', window.Element);
+        vi.stubGlobal('HTMLElement', window.HTMLElement);
+        vi.stubGlobal('HTMLButtonElement', window.HTMLButtonElement);
+        vi.stubGlobal('HTMLStyleElement', window.HTMLStyleElement);
+        vi.stubGlobal('Node', window.Node);
+        vi.stubGlobal('MutationObserver', window.MutationObserver);
+
+        const unmount = mountVideoSubtitleTranslation();
+        expect(document.getElementById(VIDEO_TRANSLATION_BUTTON_ID)).toBeNull();
+
+        currentUrl = new URL('https://www.youtube.com/watch?v=abc123');
+        vi.advanceTimersByTime(1000);
+
+        const button = document.getElementById(VIDEO_TRANSLATION_BUTTON_ID);
+        expect(button).toBeInstanceOf(window.HTMLButtonElement);
+        expect(button?.parentElement?.className).toContain('ytp-right-controls');
+        unmount();
+        expect(document.getElementById(VIDEO_TRANSLATION_BUTTON_ID)).toBeNull();
+    });
+});

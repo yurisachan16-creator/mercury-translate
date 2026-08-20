@@ -1,0 +1,47 @@
+name: Feature request
+description: Propose a scoped improvement for Mercury Translate.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful behavior change.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Product surface
+      options:
+        - Webpage translation
+        - Selection translation
+        - Image OCR translation
+        - YouTube subtitles
+        - PDF reader
+        - Translation providers
+        - Languages or OCR models
+        - Documentation or release
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy or network impact
+      description: Note any new network service, host permission, API key storage, cache, or local model change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional links, related projects, or workarounds.

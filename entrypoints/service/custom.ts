@@ -1,0 +1,29 @@
+import {commonMsgTemplate} from "../utils/template";
+import {method} from "../utils/constant";
+import {services} from "@/entrypoints/utils/option";
+import {config} from "@/entrypoints/utils/config";
+import {contentPostHandler} from "@/entrypoints/utils/check";
+import {appendOptionalBearer} from './auth';
+
+async function custom(message: any) {
+    const service = message.serviceOverride || services.custom;
+
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    appendOptionalBearer(headers, config.token[service]);
+
+    const resp = await fetch(config.custom, {
+        method: method.POST,
+        headers: headers,
+        body: commonMsgTemplate(message.origin, message.pageContext, message.summaryPrompt, message.summarySystemPrompt, service)
+    });
+
+    if (resp.ok) {
+        let result = await resp.json();
+        return  contentPostHandler(result.choices[0].message.content);
+    } else {
+        throw new Error(`翻译失败: ${resp.status} ${resp.statusText}`);
+    }
+}
+
+export default custom;

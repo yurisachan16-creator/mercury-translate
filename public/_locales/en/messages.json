@@ -1,0 +1,14 @@
+{
+  "extensionName": {
+    "message": "Mercury Translate",
+    "description": "Extension name"
+  },
+  "extensionShortName": {
+    "message": "Mercury",
+    "description": "Short extension name"
+  },
+  "extensionDescription": {
+    "message": "An open-source bilingual translation extension for web pages, selected text, subtitles, images, and PDFs.",
+    "description": "Extension description"
+  }
+}

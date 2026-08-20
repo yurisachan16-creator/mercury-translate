@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "capabilities": [
+    {
+      "id": "extension-core",
+      "domain": "extension",
+      "name": "extension-core",
+      "prefixes": [
+        "entrypoints"
+      ],
+      "contract_files": {
+        "agents": "entrypoints/AGENTS.md",
+        "claude": "entrypoints/CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/extension/extension-core.md",
+      "workstream_dir": "tasks/workstreams/extension/extension-core",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm compile"
+      ]
+    },
+    {
+      "id": "shared-ui",
+      "domain": "ui",
+      "name": "shared-ui",
+      "prefixes": [
+        "components"
+      ],
+      "contract_files": {
+        "agents": "components/AGENTS.md",
+        "claude": "components/CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/ui/shared-ui.md",
+      "workstream_dir": "tasks/workstreams/ui/shared-ui",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm compile"
+      ]
+    },
+    {
+      "id": "quality",
+      "domain": "quality",
+      "name": "automated-quality",
+      "prefixes": [
+        "tests"
+      ],
+      "contract_files": {
+        "agents": "tests/AGENTS.md",
+        "claude": "tests/CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/quality/automated-quality.md",
+      "workstream_dir": "tasks/workstreams/quality/automated-quality",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm test"
+      ]
+    },
+    {
+      "id": "extension-assets",
+      "domain": "assets",
+      "name": "extension-assets",
+      "prefixes": [
+        "public"
+      ],
+      "contract_files": {
+        "agents": ".ai/context/contracts/public.AGENTS.md",
+        "claude": ".ai/context/contracts/public.CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/assets/extension-assets.md",
+      "workstream_dir": "tasks/workstreams/assets/extension-assets",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm build"
+      ]
+    },
+    {
+      "id": "documentation",
+      "domain": "documentation",
+      "name": "product-documentation",
+      "prefixes": [
+        "docs"
+      ],
+      "contract_files": {
+        "agents": "docs/AGENTS.md",
+        "claude": "docs/CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/documentation/product-documentation.md",
+      "workstream_dir": "tasks/workstreams/documentation/product-documentation",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm docs:build"
+      ]
+    },
+    {
+      "id": "github-governance",
+      "domain": "release",
+      "name": "github-governance",
+      "prefixes": [
+        ".github"
+      ],
+      "contract_files": {
+        "agents": ".github/AGENTS.md",
+        "claude": ".github/CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/release/github-governance.md",
+      "workstream_dir": "tasks/workstreams/release/github-governance",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "git diff --check"
+      ]
+    },
+    {
+      "id": "store-publishing",
+      "domain": "release",
+      "name": "store-publishing",
+      "prefixes": [
+        "store-assets"
+      ],
+      "contract_files": {
+        "agents": ".ai/context/contracts/store-assets.AGENTS.md",
+        "claude": ".ai/context/contracts/store-assets.CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/release/store-publishing.md",
+      "workstream_dir": "tasks/workstreams/release/store-publishing",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm docs:build",
+        "node store-assets/scripts/generate-chrome-web-store-assets.mjs --check"
+      ]
+    },
+    {
+      "id": "release-tooling",
+      "domain": "release",
+      "name": "release-tooling",
+      "prefixes": [
+        "scripts"
+      ],
+      "contract_files": {
+        "agents": ".ai/context/contracts/scripts.AGENTS.md",
+        "claude": ".ai/context/contracts/scripts.CLAUDE.md"
+      },
+      "architecture_module": "docs/architecture/modules/release/release-tooling.md",
+      "workstream_dir": "tasks/workstreams/release/release-tooling",
+      "lsp_profile": "typescript-lsp",
+      "verification_hints": [
+        "pnpm release:artifacts",
+        "pnpm release:check"
+      ]
+    }
+  ]
+}
