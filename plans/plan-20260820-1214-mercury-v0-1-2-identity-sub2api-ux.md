@@ -154,9 +154,9 @@ The public default branch currently retains 754 upstream commits, so GitHub attr
 
 - [x] Capture and preflight the strict repo-harness contract; establish the linked clean-history worktree from the fulfilled v0.1.1 tree.
 - [x] Create and verify the pre-clean archive ref and record old main/tag/release/key fingerprints without moving main.
-- [ ] Implement endpoint normalization, model discovery, non-streaming response parsing, localized errors, and provider tests.
-- [ ] Implement popup/settings/About attribution and usability refinements with complete English, Simplified Chinese, and Traditional Chinese strings.
-- [ ] Update version, changelog, README/legal boundaries, product specification, OCR size copy, and release metadata.
+- [x] Implement endpoint normalization, model discovery, non-streaming response parsing, localized errors, and provider tests.
+- [x] Implement popup/settings/About attribution and usability refinements with complete English, Simplified Chinese, and Traditional Chinese strings.
+- [x] Update version, changelog, README/legal boundaries, product specification, OCR size copy, and release metadata.
 - [ ] Run local Sub2API fixtures, unit/integration suites, compile, builds, docs, artifacts, readiness, diff, and Chrome 151+ regressions without real paid endpoints.
 - [ ] Run repo-harness-check and independent review; record history and privacy evidence.
 - [ ] Stop before default-branch cutover, tag, Release, or store submission and request the final explicit user confirmation.
@@ -193,9 +193,9 @@ The public default branch currently retains 754 upstream commits, so GitHub attr
 ## Task Breakdown
 - [x] Capture and preflight the strict repo-harness contract; establish the linked clean-history worktree from the fulfilled v0.1.1 tree.
 - [x] Create and verify the pre-clean archive ref and record old main/tag/release/key fingerprints without moving main.
-- [ ] Implement endpoint normalization, model discovery, non-streaming response parsing, localized errors, and provider tests.
-- [ ] Implement popup/settings/About attribution and usability refinements with complete English, Simplified Chinese, and Traditional Chinese strings.
-- [ ] Update version, changelog, README/legal boundaries, product specification, OCR size copy, and release metadata.
+- [x] Implement endpoint normalization, model discovery, non-streaming response parsing, localized errors, and provider tests.
+- [x] Implement popup/settings/About attribution and usability refinements with complete English, Simplified Chinese, and Traditional Chinese strings.
+- [x] Update version, changelog, README/legal boundaries, product specification, OCR size copy, and release metadata.
 - [ ] Run local Sub2API fixtures, unit/integration suites, compile, builds, docs, artifacts, readiness, diff, and Chrome 151+ regressions without real paid endpoints.
 - [ ] Run repo-harness-check and independent review; record history and privacy evidence.
 - [ ] Stop before default-branch cutover, tag, Release, or store submission and request the final explicit user confirmation.

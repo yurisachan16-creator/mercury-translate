@@ -157,6 +157,7 @@ exit_criteria:
     - entrypoints/service/newapi.ts
     - tests/newApiService.test.ts
     - tests/providerModelCatalog.test.ts
+    - tests/sub2ApiLocalFixture.test.ts
     - tests/mercuryIdentityUx.test.ts
   artifacts_exist:
     - .ai/harness/checks/latest.json
@@ -164,6 +165,7 @@ exit_criteria:
   tests_pass:
     - path: tests/newApiService.test.ts
     - path: tests/providerModelCatalog.test.ts
+    - path: tests/sub2ApiLocalFixture.test.ts
     - path: tests/mercuryIdentityUx.test.ts
     - path: tests/i18n.test.ts
   commands_succeed:
