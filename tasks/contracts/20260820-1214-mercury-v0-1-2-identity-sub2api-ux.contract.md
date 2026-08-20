@@ -1,6 +1,6 @@
 # Task Contract: mercury-v0-1-2-identity-sub2api-ux
 
-> **Status**: Active
+> **Status**: Fulfilled
 > **Plan**: plans/plan-20260820-1214-mercury-v0-1-2-identity-sub2api-ux.md
 > **Task Profile**: code-change
 > **Workflow Profile**: strict

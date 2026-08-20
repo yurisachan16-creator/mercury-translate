@@ -157,7 +157,7 @@ The public default branch currently retains 754 upstream commits, so GitHub attr
 - [x] Implement endpoint normalization, model discovery, non-streaming response parsing, localized errors, and provider tests.
 - [x] Implement popup/settings/About attribution and usability refinements with complete English, Simplified Chinese, and Traditional Chinese strings.
 - [x] Update version, changelog, README/legal boundaries, product specification, OCR size copy, and release metadata.
-- [ ] Run local Sub2API fixtures, unit/integration suites, compile, builds, docs, artifacts, readiness, diff, and Chrome 151+ regressions without real paid endpoints.
+- [x] Run local Sub2API fixtures, unit/integration suites, compile, builds, docs, artifacts, readiness, diff, and Chrome 151+ regressions without real paid endpoints (final extension-page reload remains a documented browser-control residual).
 - [ ] Run repo-harness-check and independent review; record history and privacy evidence.
 - [ ] Stop before default-branch cutover, tag, Release, or store submission and request the final explicit user confirmation.
 
@@ -196,6 +196,6 @@ The public default branch currently retains 754 upstream commits, so GitHub attr
 - [x] Implement endpoint normalization, model discovery, non-streaming response parsing, localized errors, and provider tests.
 - [x] Implement popup/settings/About attribution and usability refinements with complete English, Simplified Chinese, and Traditional Chinese strings.
 - [x] Update version, changelog, README/legal boundaries, product specification, OCR size copy, and release metadata.
-- [ ] Run local Sub2API fixtures, unit/integration suites, compile, builds, docs, artifacts, readiness, diff, and Chrome 151+ regressions without real paid endpoints.
+- [x] Run local Sub2API fixtures, unit/integration suites, compile, builds, docs, artifacts, readiness, diff, and Chrome 151+ regressions without real paid endpoints (final extension-page reload remains a documented browser-control residual).
 - [ ] Run repo-harness-check and independent review; record history and privacy evidence.
 - [ ] Stop before default-branch cutover, tag, Release, or store submission and request the final explicit user confirmation.
