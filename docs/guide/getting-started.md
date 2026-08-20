@@ -1,10 +1,10 @@
 # 安装与第一次翻译
 
-Mercury Translate 0.1.1 面向 Chrome 桌面版 151 及更高版本。GitHub 侧载包仍然免费可用；Chrome Web Store 版准备为不公开搜索安装链接，审核通过后由 Chrome 自动更新。
+Mercury Translate 0.1.2 面向 Chrome 桌面版 151 及更高版本。GitHub 侧载包仍然免费可用；Chrome Web Store 版准备为不公开搜索安装链接，审核通过后由 Chrome 自动更新。
 
 ## 安装扩展
 
-1. 从项目 GitHub Releases 下载 `mercury-translate-v0.1.1-chrome.zip`。
+1. 从项目 GitHub Releases 下载 `mercury-translate-v0.1.2-chrome.zip`。
 2. 校对同一 Release 中 `SHA256SUMS` 的扩展包摘要，然后解压到一个固定目录。
 3. 打开 `chrome://extensions`，启用“开发者模式”。
 4. 选择“加载已解压的扩展程序”，指向解压后的目录。
@@ -14,7 +14,7 @@ Mercury Translate 0.1.1 面向 Chrome 桌面版 151 及更高版本。GitHub 侧
 
 ## Chrome Web Store 版
 
-商店版使用 `mercury-translate-v0.1.1-chrome-web-store.zip` 手动上传审核，不由项目脚本自动提交。审核通过后用户通过 Unlisted 链接安装。因为商店包不包含 GitHub 侧载公钥，Chrome 会分配新的扩展 ID；旧版设置需要通过“配置管理”的导出/导入迁移，API Key 默认排除。
+商店版使用 `mercury-translate-v0.1.2-chrome-web-store.zip` 手动上传审核，不由项目脚本自动提交。审核通过后用户通过 Unlisted 链接安装。因为商店包不包含 GitHub 侧载公钥，Chrome 会分配新的扩展 ID；旧版设置需要通过“配置管理”的导出/导入迁移，API Key 默认排除。
 
 ## 第一次网页翻译
 

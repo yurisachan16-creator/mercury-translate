@@ -19,10 +19,10 @@ function pngDimensions(path: string) {
 }
 
 describe('Chrome Web Store release configuration', () => {
-  it('uses package.json as the v0.1.1 version authority', () => {
+  it('uses package.json as the v0.1.2 version authority', () => {
     const packageJson = JSON.parse(read('package.json'))
 
-    expect(packageJson.version).toBe('0.1.1')
+    expect(packageJson.version).toBe('0.1.2')
     expect(packageJson.scripts).toMatchObject({
       'build:github': 'MERCURY_DISTRIBUTION_TARGET=github wxt build',
       'build:chrome-web-store': 'MERCURY_DISTRIBUTION_TARGET=chrome-web-store wxt build',

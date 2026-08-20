@@ -2,7 +2,7 @@
   "name": "mercury-translate",
   "description": "Local-first bilingual translation for webpages, YouTube subtitles, images, and PDF documents.",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "wxt",

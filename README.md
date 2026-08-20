@@ -6,7 +6,7 @@
 
 ### 水星翻译 · Local-first bilingual reading for the open web
 
-[![Version](https://img.shields.io/badge/version-0.1.1-f59e0b?style=flat-square)](../../releases)
+[![Version](https://img.shields.io/badge/version-0.1.2-f59e0b?style=flat-square)](../../releases)
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-22a06b?style=flat-square)](./LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome-151%2B-4285F4?style=flat-square)](https://www.google.com/chrome/)
 
@@ -26,7 +26,7 @@ YouTube 字幕、图片 OCR 和 PDF 原页/译文对照。项目不运营中转�
 - **YouTube** — bilingual captions with independent provider selection.
 - **PDF** — Chrome 151+ PDF handler with the original page on the left and translated blocks on the right.
 - **Local first** — Chrome Translator is the default. Network providers are never selected as an implicit fallback.
-- **Bring your own key** — OpenAI/GPT, DeepSeek, Gemini, OpenAI-compatible endpoints, and local Ollama remain available.
+- **Bring your own key** — OpenAI/GPT, DeepSeek, Gemini, OpenAI-compatible / Sub2API endpoints, and local Ollama remain available.
 - **International UI** — English, Simplified Chinese, and Traditional Chinese; OCR packs cover English, Simplified/Traditional Chinese, Japanese, and Korean.
 
 Google and Microsoft/Bing are network services. If the local Chrome model cannot
@@ -38,10 +38,10 @@ boundaries.
 
 ### Chrome Web Store
 
-Mercury Translate v0.1.1 prepares an Unlisted Chrome Web Store package so users
+Mercury Translate v0.1.2 prepares an Unlisted Chrome Web Store package so users
 can install from a direct store link and receive Chrome-managed updates after
-manual review approval. The project does not automate Chrome Developer Dashboard
-payment, upload, declarations, or review submission.
+manual owner review approval. The project does not automate Chrome Developer
+Dashboard payment, upload, declarations, or review submission.
 
 The store build receives a new Chrome Web Store extension ID because it omits the
 GitHub sideload public key. Existing GitHub sideload users can migrate settings
@@ -61,8 +61,10 @@ Chrome Web Store listing materials live in
 privacy pages are published from [`docs/privacy`](./docs/privacy).
 
 The first use of an OCR language may download a version-pinned, checksummed
-language model. Recognition happens locally after that download. Chrome may also
-download its own Translator model for a new language pair.
+language model. The pinned model sizes are: `eng` 4,113,088 bytes, `chi_sim`
+2,469,156 bytes, `chi_tra` 2,366,642 bytes, `jpn` 2,471,260 bytes, and `kor`
+1,677,415 bytes. Recognition happens locally after that download. Chrome may
+also download its own Translator model for a new language pair.
 
 ## Development
 

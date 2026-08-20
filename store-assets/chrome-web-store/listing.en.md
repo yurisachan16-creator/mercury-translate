@@ -48,7 +48,7 @@ Core features:
 5. Translation services under your control
 - Default: Chrome's on-device Translator API when the language pair is available
 - Local option: your own Ollama endpoint
-- Network options: Google, Microsoft/Bing, DeepSeek, Gemini, OpenAI/GPT, OpenAI-compatible endpoints, and experimental DeepLX
+- Network options: Google, Microsoft/Bing, DeepSeek, Gemini, OpenAI/GPT, OpenAI-compatible / Sub2API endpoints, and experimental DeepLX
 
 Privacy and costs:
 
@@ -58,8 +58,9 @@ Privacy and costs:
 - API keys are stored only in chrome.storage.local and are not synced, logged, or sent to Mercury.
 - PDF bytes stay in memory. The optional PDF translation cache stores translated text and hashes, not the original PDF.
 - OCR language models may be downloaded from fixed GitHub Release assets and verified before local use.
+- OpenAI-compatible / Sub2API model discovery only requests `/v1/models` after you click the fetch-model action; translation text is sent only when you start translation.
 
-Mercury Translate is an independent GPL-3.0 project based on FluentRead. It is not affiliated with or endorsed by FluentRead, Google, Microsoft, OpenAI, Gemini, DeepSeek, Ollama, PDF.js, or Tesseract.js.
+Mercury Translate is an independent GPL-3.0 project. It is not affiliated with or endorsed by Google, Microsoft, OpenAI, Gemini, DeepSeek, Ollama, PDF.js, Tesseract.js, or other service providers.
 ```
 
 ## Screenshot captions

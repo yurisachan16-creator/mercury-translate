@@ -32,6 +32,8 @@ Use this file as the reviewed source of truth when completing the Chrome Web Sto
 
 > Host access is optional and is requested only after a user selects a network translation provider, custom endpoint, OCR source, or image that requires that origin. The extension does not receive blanket host access at installation. Denying the request leaves local features available and prevents that network operation.
 
+> For OpenAI-compatible / Sub2API endpoints, host access is requested for the configured endpoint origin only. Clicking the model-fetch action requests `/v1/models` without translation text. Translation text is sent only after the user starts translation, through non-streaming `/v1/chat/completions`.
+
 ### Web-accessible resources
 
 > Makes only packaged interface icons and the packaged content-script stylesheet available to pages so the translation controls can render correctly. These resources contain no user data and execute no remote code.
@@ -48,7 +50,7 @@ Use this file as the reviewed source of truth when completing the Chrome Web Sto
 
 Select **No, I am not using remote code**.
 
-> All executable JavaScript, WebAssembly, PDF.js, and Tesseract worker code is packaged inside the extension ZIP. The extension does not use remote script tags, remote dynamic imports, `eval` of downloaded code, or remotely hosted workers. OCR `traineddata` language models are non-executable data files downloaded on demand from pinned GitHub Release assets, verified against bundled SHA-256 values, and stored locally.
+> All executable JavaScript, WebAssembly, PDF.js, and Tesseract worker code is packaged inside the extension ZIP. The extension does not use remote script tags, remote dynamic imports, `eval` of downloaded code, or remotely hosted workers. OCR `traineddata` language models are non-executable data files downloaded on demand from pinned GitHub Release assets, verified against bundled SHA-256 values, and stored locally. Current pinned sizes are `eng` 4,113,088 bytes, `chi_sim` 2,469,156 bytes, `chi_tra` 2,366,642 bytes, `jpn` 2,471,260 bytes, and `kor` 1,677,415 bytes.
 
 ## Data-use answers
 

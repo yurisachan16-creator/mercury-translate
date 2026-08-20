@@ -10,7 +10,7 @@ Mercury Translate 把服务按隐私边界分为三类：本地、免费联网�
 | --- | --- |
 | 不希望文本离开本机 | Chrome 本地 Translator API，或你自己运行的 Ollama |
 | 快速试用联网翻译 | Microsoft/Bing 或 Google 免费联网服务 |
-| 需要自己的额度、质量或模型 | DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自定义端点 |
+| 需要自己的额度、质量或模型 | DeepSeek、Gemini、OpenAI/GPT、OpenAI 兼容 / Sub2API 自定义端点 |
 | 调试实验服务 | 高级实验选项中的 DeepLX |
 
 Chrome 本地 Translator API 是默认服务。启动时 Mercury Translate 会检测当前语言组合和模型状态；如果浏览器不支持、模型未下载或语言组合不可用，界面会显示对应状态。
@@ -29,7 +29,7 @@ Microsoft/Bing 和 Google 被归类为免费联网服务。它们不需要你填
 
 ## 自带密钥服务
 
-DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自定义端点和其他 AI 服务适合需要上下文、术语一致性或风格控制的内容。配置时通常需要填写：
+DeepSeek、Gemini、OpenAI/GPT、OpenAI 兼容 / Sub2API 自定义端点和其他 AI 服务适合需要上下文、术语一致性或风格控制的内容。配置时通常需要填写：
 
 - API Base URL；
 - API Key；
@@ -39,6 +39,22 @@ DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自定义端点和其他 AI �
 API Key 只保存在浏览器本地存储中，不参与同步，也不会写入日志。保存服务配置时，Mercury Translate 才会申请对应域名权限。
 
 不同供应商对兼容接口的实现并不完全相同。如果请求失败，先用服务商官方示例验证地址、模型和密钥，再回到 Mercury Translate 检查配置。
+
+## OpenAI 兼容 / Sub2API
+
+原有的 New API 服务在 v0.1.2 中显示为“OpenAI 兼容 / Sub2API”，内部服务 ID 和已有设置字段保持不变。它适合 Wei-Shaw Sub2API、New API、One API、LiteLLM 或其他提供 OpenAI Chat Completions 兼容路由的网关。
+
+端点可以填写根地址、包含 `/v1` 的地址，或完整 `/v1/chat/completions` 地址。Mercury Translate 会由同一个地址推导模型列表端点 `/v1/models` 和翻译端点 `/v1/chat/completions`；如果填写的是 `/v1/responses`，当前版本会提示暂不支持 Responses API。
+
+配置顺序建议为：
+
+1. 填写端点；
+2. 填写 API Key；
+3. 点击获取模型；
+4. 从列表选择模型，或在模型接口不可用时手动输入模型 ID；
+5. 保存配置。
+
+获取模型只会请求 `/v1/models`，不会发送网页、字幕、图片或 PDF 文本。真正的模型调用只在你主动翻译时发生，并且请求固定使用 `stream: false` 的 Chat Completions。API Key 只保存在本地 `storage.local`，运行时消息不会携带或返回密钥，设置导出默认也不会包含密钥。
 
 ## DeepLX
 

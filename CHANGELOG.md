@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2] - 2026-08-20
+
+- Prepared the Mercury-only history candidate while keeping the existing repository URL, side-load extension key, archived pre-clean main ref, and existing release tags unchanged.
+- Upgraded the existing `newapi` provider surface to "OpenAI-compatible / Sub2API" in documentation, with explicit endpoint normalization, model discovery, manual model fallback, non-streaming Chat Completions, and no automatic privacy-class switching.
+- Refined product attribution boundaries: daily product/help/store copy presents Mercury identity, while README, NOTICE, GPL, and third-party notices retain required FluentRead provenance and license disclosures.
+- Updated v0.1.2 release metadata, Sub2API privacy behavior, no-payment/no-store-submission boundaries, and measured OCR language pack sizes.
+
 ## [0.1.1] - 2026-08-20
 
 - Added separate GitHub and Chrome Web Store release targets: the GitHub package preserves the existing extension ID, while the store package omits the fixed key for Chrome-managed updates.
@@ -19,10 +26,9 @@
 - Added the Chrome 151+ side-by-side PDF reader with visible-page scheduling, local OCR, cancellation, cache controls, and native-viewer fallback.
 - Added version-pinned, SHA-256-verified OCR models for English, Simplified/Traditional Chinese, Japanese, and Korean.
 
-Mercury Translate is an independent, unofficial fork of
-[FluentRead](https://github.com/FluentRead/FluentRead), initially based on commit
-`f91543c6b6b76f3c5d6343b47a82e431acfa648a`. It is not endorsed by or affiliated
-with the FluentRead maintainers. The combined project remains GPL-3.0.
+Named upstream provenance and third-party notices are maintained in README,
+NOTICE, LICENSE, and THIRD_PARTY_NOTICES. The combined project remains GPL-3.0.
 
 [0.1.0]: https://github.com/yurisachan16-creator/mercury-translate/releases/tag/v0.1.0
 [0.1.1]: https://github.com/yurisachan16-creator/mercury-translate/releases/tag/v0.1.1
+[0.1.2]: https://github.com/yurisachan16-creator/mercury-translate/releases/tag/v0.1.2

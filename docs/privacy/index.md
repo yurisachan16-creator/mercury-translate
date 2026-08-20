@@ -19,7 +19,8 @@ Mercury Translate 是开源浏览器扩展，没有 Mercury 账号、后端服�
 - Chrome Translator API：语言组合可用时使用 Chrome 本地能力。
 - Ollama：你自己选择的本地或自托管端点。
 - Google、Microsoft/Bing：免费联网服务，不保证稳定性。
-- DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自定义端点等 BYOK 服务：由你配置密钥或端点的联网服务。
+- DeepSeek、Gemini、OpenAI/GPT、OpenAI 兼容 / Sub2API 自定义端点等 BYOK 服务：由你配置密钥或端点的联网服务。
+- OpenAI 兼容 / Sub2API 获取模型：只有你点击“获取模型”时才请求 `/v1/models`，该请求不包含待翻译文本；真正的模型请求只在你主动翻译时发送到配置的 `/v1/chat/completions`。
 - DeepLX：高级实验联网选项，默认关闭。
 - OCR 模型：按需从固定 Release 资产下载，经过 SHA-256 校验后再使用。
 
@@ -27,7 +28,7 @@ Mercury Translate 是开源浏览器扩展，没有 Mercury 账号、后端服�
 
 ## 设置迁移
 
-v0.1.1 的迁移文件用于从 GitHub 侧载版移动到 Chrome Web Store 版。商店版会获得新的扩展 ID，无法直接读取旧版设置。API Key 和服务商密钥默认排除；只有你明确选择包含密钥后，文件才会以明文保存这些凭据。
+v0.1.2 的迁移文件用于从 GitHub 侧载版移动到 Chrome Web Store 版。商店版会获得新的扩展 ID，无法直接读取旧版设置。API Key 和服务商密钥默认排除；只有你明确选择包含密钥后，文件才会以明文保存这些凭据。
 
 ## 不出售、不跟踪
 

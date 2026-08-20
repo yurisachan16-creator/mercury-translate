@@ -1,8 +1,8 @@
 # Mercury Translate 隐私说明
 
-**生效日期：2026-08-19**
+**生效日期：2026-08-20**
 
-Mercury Translate（水星翻译）是一款无账号、无自建后端、无遥测的开源浏览器扩展。
+Mercury Translate（水星翻译）是一款无账号、无自建后端、无遥测、无广告、无订阅和无付款功能的开源浏览器扩展。
 我们不运营 Mercury Translate 中转服务器，也不收集用户活动、浏览历史、设备标识、
 广告数据或分析事件。
 
@@ -24,13 +24,15 @@ Chrome 可能在首次使用某个语言组合时下载本地翻译模型；该�
 
 - Google Translate；
 - Microsoft/Bing Translator；
-- DeepSeek、Gemini、OpenAI/GPT 或其他 OpenAI-compatible 端点；
+- DeepSeek、Gemini、OpenAI/GPT 或其他 OpenAI 兼容 / Sub2API 端点；
 - 用户手动配置的其他服务。
 
 Google 和 Microsoft/Bing 不是本地翻译。当 Chrome 本地翻译不支持某语言组合时，
 Mercury Translate 会先显示提示，用户可选择“仅本次”、“记住该服务”或取消。
 扩展不会在本地服务失败后静默改用联网服务。
 “仅本次”只对当前网页或 PDF 阅读器会话生效，不会授权其他标签页；新建或重载页面会再次询问。
+
+OpenAI 兼容 / Sub2API 的模型发现只会在用户点击获取模型时请求 `/v1/models`，该请求不包含待翻译文本。真正的模型请求只会在用户主动翻译网页、字幕、图片或 PDF 文本时，通过非流式 `/v1/chat/completions` 发送。
 
 第三方服务收到数据后，由其自身条款和隐私政策约束。敏感文档应使用 Chrome 本地翻译、
 本机 Ollama，或不进行翻译。
@@ -40,6 +42,8 @@ Mercury Translate 会先显示提示，用户可选择“仅本次”、“记�
 首次启用英文、简体中文、繁体中文、日文或韩文 OCR 时，扩展会从固定的 GitHub 版本资产
 下载对应 `traineddata` 文件。下载请求不包含网页、PDF、图片或识别文本。模型通过
 SHA-256 校验后才会保存到 IndexedDB 并交给 Tesseract.js。
+
+当前固定模型大小为：`eng` 4,113,088 字节、`chi_sim` 2,469,156 字节、`chi_tra` 2,366,642 字节、`jpn` 2,471,260 字节、`kor` 1,677,415 字节。
 
 ## 4. 本地存储
 

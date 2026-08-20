@@ -1,11 +1,11 @@
 # Install Mercury Translate from GitHub
 
-Mercury Translate v0.1.1 supports Google Chrome desktop version 151 or newer.
+Mercury Translate v0.1.2 supports Google Chrome desktop version 151 or newer.
 
 ## Chrome Web Store
 
-The v0.1.1 work package prepares an Unlisted Chrome Web Store ZIP:
-`mercury-translate-v0.1.1-chrome-web-store.zip`.
+The v0.1.2 work package prepares an Unlisted Chrome Web Store ZIP:
+`mercury-translate-v0.1.2-chrome-web-store.zip`.
 
 Installation from the store requires the repository owner to manually complete
 Chrome Web Store developer registration, upload, privacy declarations, and
@@ -19,7 +19,7 @@ them into the store extension. API keys are excluded from export by default.
 
 ## GitHub sideload
 
-1. Download `mercury-translate-v0.1.1-chrome.zip` and `SHA256SUMS` from the same GitHub Release.
+1. Download `mercury-translate-v0.1.2-chrome.zip` and `SHA256SUMS` from the same GitHub Release.
 2. Verify the ZIP checksum against `SHA256SUMS`.
 3. Extract the ZIP into a permanent folder. Do not delete that folder while the extension is installed.
 4. Open `chrome://extensions` in Chrome.
@@ -35,12 +35,12 @@ model against the pinned size and SHA-256 digest before using it.
 
 ## 从 GitHub 手动安装
 
-Mercury Translate v0.1.1 仅支持 Google Chrome 桌面版 151 或更高版本。
+Mercury Translate v0.1.2 仅支持 Google Chrome 桌面版 151 或更高版本。
 
 ## Chrome Web Store 安装
 
-v0.1.1 会准备不公开搜索的 Chrome Web Store ZIP：
-`mercury-translate-v0.1.1-chrome-web-store.zip`。
+v0.1.2 会准备不公开搜索的 Chrome Web Store ZIP：
+`mercury-translate-v0.1.2-chrome-web-store.zip`。
 
 商店安装需要仓库所有者在 Chrome Developer Dashboard 手动完成开发者注册、
 上传、隐私声明和提交审核。本仓库不会自动执行付款、上传、声明或提交。

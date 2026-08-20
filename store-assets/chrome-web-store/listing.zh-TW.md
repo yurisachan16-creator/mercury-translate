@@ -48,7 +48,7 @@ Mercury Translate（水星翻譯）是一款面向 Chrome 桌面版的開源雙�
 5. 翻譯服務由你選擇
 - 預設：Chrome 本地 Translator API（語言組合可用時）
 - 本地選項：你自己的 Ollama
-- 聯網選項：Google、Microsoft/Bing、DeepSeek、Gemini、OpenAI/GPT、OpenAI-compatible 自訂端點，以及預設關閉的實驗 DeepLX
+- 聯網選項：Google、Microsoft/Bing、DeepSeek、Gemini、OpenAI/GPT、OpenAI 相容 / Sub2API 自訂端點，以及預設關閉的實驗 DeepLX
 
 隱私與費用：
 
@@ -58,8 +58,9 @@ Mercury Translate（水星翻譯）是一款面向 Chrome 桌面版的開源雙�
 - API Key 僅保存在 chrome.storage.local，不同步、不寫入日誌、不傳送給 Mercury。
 - PDF 原始位元組只駐留記憶體。可選 PDF 快取保存譯文和雜湊，不保存原 PDF。
 - OCR 語言模型可能從固定 GitHub Release 資產下載，校驗通過後才在本地使用。
+- OpenAI 相容 / Sub2API 只有在你點擊取得模型時請求 `/v1/models`；翻譯文字只會在你主動開始翻譯時傳送。
 
-Mercury Translate 是基於 FluentRead 的獨立 GPL-3.0 專案，非 FluentRead 官方 fork，也不代表 Google、Microsoft、OpenAI、Gemini、DeepSeek、Ollama、PDF.js 或 Tesseract.js 官方背書。
+Mercury Translate 是獨立 GPL-3.0 專案，不代表 Google、Microsoft、OpenAI、Gemini、DeepSeek、Ollama、PDF.js、Tesseract.js 或其他服務商的官方背書。
 ```
 
 ## 截圖標題

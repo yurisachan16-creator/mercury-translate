@@ -1,6 +1,6 @@
 # Chrome Web Store assets
 
-This directory contains the free, manual Chrome Web Store listing package for Mercury Translate v0.1.1. It follows the proven asset/checklist structure reviewed from OnlyTranslate commit `3f5f16e8d94bc7f8f04add9264b804032c70d1b3`, but all Mercury text, visuals, privacy claims, identifiers, and upload instructions are original to this project.
+This directory contains the free, manual Chrome Web Store listing package for Mercury Translate v0.1.2. It follows the proven asset/checklist structure reviewed from OnlyTranslate commit `3f5f16e8d94bc7f8f04add9264b804032c70d1b3`, but all Mercury text, visuals, privacy claims, identifiers, and upload instructions are original to this project.
 
 No Chrome Web Store API key, service account, automated upload, payment step, telemetry, or paid service is used by this directory. The only possible cost remains the Chrome Web Store developer registration fee, paid manually by the repository owner outside automation.
 
@@ -41,7 +41,7 @@ Use visibility `Unlisted`, category `Productivity`, all available regions, no in
 
 ## Manual upload checklist
 
-- [ ] Build the store package with the release workflow. It must be the keyless `mercury-translate-v0.1.1-chrome-web-store.zip`.
+- [ ] Build the store package with the release workflow. It must be the keyless `mercury-translate-v0.1.2-chrome-web-store.zip`.
 - [ ] Confirm the GitHub sideload ZIP still keeps the fixed public key and old extension ID.
 - [ ] Upload only the keyless Chrome Web Store ZIP in Chrome Developer Dashboard.
 - [ ] Upload `icon-128.png`, `small-promo-tile.png`, and the five screenshots in the order listed above.
