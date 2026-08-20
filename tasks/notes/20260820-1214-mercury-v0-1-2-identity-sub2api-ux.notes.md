@@ -4,7 +4,7 @@
 > **Plan**: plans/plan-20260820-1214-mercury-v0-1-2-identity-sub2api-ux.md
 > **Contract**: tasks/contracts/20260820-1214-mercury-v0-1-2-identity-sub2api-ux.contract.md
 > **Review**: tasks/reviews/20260820-1214-mercury-v0-1-2-identity-sub2api-ux.review.md
-> **Last Updated**: 2026-08-20 13:14
+> **Last Updated**: 2026-08-20 13:24
 > **Lifecycle**: notes
 
 ## Design Decisions
@@ -56,6 +56,7 @@
 - Repo tooling: CodeGraph indexed 216 source files and reports the project index up to date; `repo-harness doctor` passes all hard checks with one pre-existing user-level unmanaged Claude hook warning. Strict task-workflow checking passes. Agent tooling reports only user-level Waza drift/advisories, not a repository failure.
 - Security/privacy evidence: no private key, real provider key, or unexpected personal email was found; only the configured GitHub noreply identity and reserved fixture domains appear. Largest tracked files are the two bundled Tesseract WASM JavaScript assets at about 3.95 MB, below the 10 MB review threshold. LICENSE, NOTICE, and THIRD_PARTY_NOTICES remain unchanged from the clean v0.1.1 root.
 - Browser evidence: `.gstack/qa-reports/qa-report-mercury-translate-browser-2026-08-20.md` records the prior Chrome 151 full matrix and 24 inspected screenshots, including webpage, selection, dynamic/Shadow DOM, YouTube, PDF, OCR, cancel/retry, and local/network privacy. v0.1.2 provider behavior is additionally covered by local/mocked tests; final popup/settings live reload remains the explicit manual residual noted above.
+- Independent local gatekeeper review at `3e01db9b55a8f29f5082cec20e9446ffa2466148` returned PASS after rerunning compile, 56 files / 498 tests, build, docs, release artifacts/readiness, diff, doctor, strict workflow, and strict read-only contract verification. It confirmed the provider/privacy/history/manifest boundaries and carried forward only the documented Chrome special-page, external Claude AcceptanceReceipt, user-level hook warning, and nonfatal docs imagemin residuals.
 
 ## Promotion Filter
 
